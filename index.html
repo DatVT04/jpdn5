@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Ôn luyện JLPT N5 – kanji, từ vựng, ngữ pháp, kana, chia động từ, thi thử. Học bằng SRS, nhắm điểm cao.">
+<meta name="theme-color" content="#0e1020">
+<title>N5 道場 — Ôn luyện JLPT N5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎌</text></svg>">
+</head>
+<body>
+
+<div id="splash" class="splash"><div class="splash-inner"><div class="splash-kanji">五</div><div class="splash-text">N5 道場</div></div></div>
+
+<div class="app">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">五</div>
+      <div class="brand-text">
+        <strong>N5 道場</strong>
+        <span>Dojo luyện thi N5</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="mainNav">
+      <a class="nav-item" href="#/home"      data-route="home"><span class="ni">🏠</span><span>Trang chủ</span></a>
+      <a class="nav-item" href="#/review"    data-route="review"><span class="ni">⚡</span><span>Ôn tập SRS</span><em class="badge" id="dueBadge">0</em></a>
+      <a class="nav-item" href="#/flashcard" data-route="flashcard"><span class="ni">🃏</span><span>Flashcard</span></a>
+      <a class="nav-item" href="#/quiz"      data-route="quiz"><span class="ni">🎯</span><span>Luyện tập</span></a>
+      <a class="nav-item" href="#/kana"      data-route="kana"><span class="ni">あ</span><span>Bảng chữ cái</span></a>
+      <a class="nav-item" href="#/grammar"   data-route="grammar"><span class="ni">📐</span><span>Ngữ pháp</span></a>
+      <a class="nav-item" href="#/browse"    data-route="browse"><span class="ni">🔍</span><span>Tra cứu</span></a>
+      <a class="nav-item" href="#/exam"      data-route="exam"><span class="ni">📝</span><span>Thi thử</span></a>
+      <a class="nav-item" href="#/stats"     data-route="stats"><span class="ni">📊</span><span>Thống kê</span></a>
+      <a class="nav-item" href="#/settings"  data-route="settings"><span class="ni">⚙️</span><span>Cài đặt</span></a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="streak-chip" id="streakChip" title="Chuỗi ngày học liên tiếp">🔥 <b>0</b> ngày</div>
+      <button class="icon-btn" id="themeToggle" title="Đổi giao diện (T)">🌗</button>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="topbar-title" id="pageTitle">Trang chủ</div>
+      <div class="topbar-actions">
+        <div class="goal-mini" id="goalMini" title="Tiến độ mục tiêu hôm nay">
+          <svg viewBox="0 0 36 36" class="ring"><circle class="ring-bg" cx="18" cy="18" r="15.9"/><circle class="ring-fg" id="goalRing" cx="18" cy="18" r="15.9"/></svg>
+          <span id="goalMiniText">0/30</span>
+        </div>
+        <button class="icon-btn" id="searchBtn" title="Tìm kiếm nhanh (/)">🔍</button>
+      </div>
+    </header>
+
+    <div class="view" id="view"></div>
+  </main>
+
+  <!-- ===== Mobile bottom nav ===== -->
+  <nav class="tabbar" id="tabbar">
+    <a href="#/home"      data-route="home"><span>🏠</span>Nhà</a>
+    <a href="#/review"    data-route="review"><span>⚡</span>Ôn tập</a>
+    <a href="#/quiz"      data-route="quiz"><span>🎯</span>Luyện</a>
+    <a href="#/browse"    data-route="browse"><span>🔍</span>Tra</a>
+    <a href="#/exam"      data-route="exam"><span>📝</span>Thi</a>
+  </nav>
+</div>
+
+<!-- ===== Command palette / quick search ===== -->
+<div class="palette-wrap" id="paletteWrap" hidden>
+  <div class="palette">
+    <input type="text" id="paletteInput" placeholder="Tìm kanji, từ vựng, ngữ pháp… (Esc để đóng)" autocomplete="off">
+    <div class="palette-results" id="paletteResults"></div>
+  </div>
+</div>
+
+<div class="modal-wrap" id="modalWrap" hidden><div class="modal" id="modal"></div></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="data/n5-data.js"></script>
+<script src="data/n5-extra.js"></script>
+<script src="js/core.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/views-study.js"></script>
+<script src="js/views-exam.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
