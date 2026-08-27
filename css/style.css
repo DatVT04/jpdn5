@@ -358,6 +358,21 @@ label.field > span{display:block;font-size:12.5px;color:var(--text-2);margin-bot
 .kana-cell.learned{border-color:color-mix(in srgb,var(--matcha) 50%,transparent)}
 .kana-grid.hide-romaji .kana-cell span{visibility:hidden}
 
+/* Bảng 五十音: 1 dòng = 1 hàng (あ・か・さ…), 5 cột = 5 nguyên âm */
+.kana-table{display:grid;gap:9px;max-width:620px}
+.kana-table.hide-romaji .kana-cell span{visibility:hidden}
+.kana-row{display:grid;grid-template-columns:44px repeat(5,minmax(0,1fr));gap:9px;align-items:center}
+.kana-rowlabel{
+  font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--text-3);
+  text-align:center;user-select:none
+}
+.kana-row.head{margin-bottom:-2px}
+.kana-vh{
+  text-align:center;font-family:var(--jp);font-size:15px;font-weight:700;
+  color:var(--text-3);padding-bottom:2px
+}
+.kana-empty{aspect-ratio:1;border-radius:15px;border:1px dashed var(--line);opacity:.35}
+
 /* ---------- Browse / list ---------- */
 .search-bar{display:flex;gap:10px;align-items:center;margin-bottom:14px}
 .search-bar input{font-size:16px}
@@ -491,6 +506,12 @@ label.field > span{display:block;font-size:12.5px;color:var(--text-2);margin-bot
   .card{padding:15px}
   .hero{padding:22px}
   .kana-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:7px}
+  .kana-table{gap:6px}
+  .kana-row{grid-template-columns:26px repeat(5,minmax(0,1fr));gap:5px}
+  .kana-rowlabel{font-size:10px;letter-spacing:0}
+  .kana-vh{font-size:12px}
+  .kana-cell{border-radius:12px}
+  .kana-empty{border-radius:12px}
   .kana-cell b{font-size:23px}
   .exam-timer{top:56px}
 }

@@ -630,6 +630,36 @@ V.kana = function (root, params) {
     const TYPE_VI = { gojuon: 'Âm cơ bản (五十音)', dakuon: 'Âm đục (゛)', handakuon: 'Âm bán đục (゜)', youon: 'Âm ghép (ゃゅょ)', gairaigo: 'Âm ngoại lai' };
     const learned = items.filter(k => SRS.mastery(k.id) > 0).length;
 
+    /* Xếp chữ đúng bảng 五十音: mỗi dòng là một hàng, mỗi cột là một nguyên âm a·i·u·e·o */
+    const VOW = ['a', 'i', 'u', 'e', 'o'];
+    const VHEAD = st.script === 'hiragana' ? ['あ', 'い', 'う', 'え', 'お'] : ['ア', 'イ', 'ウ', 'エ', 'オ'];
+    const colOf = rom => { const m = String(rom).match(/([aiueo])$/); return m ? VOW.indexOf(m[1]) : 0; };
+    function buildRows(arr) {
+      const order = [], map = {};
+      arr.forEach(k => {
+        const key = k.type + '|' + k.row;
+        if (!map[key]) { map[key] = { items: [] }; order.push(map[key]); }
+        map[key].items.push(k);
+      });
+      return order.map(g => {
+        const cells = [null, null, null, null, null];
+        g.items.forEach(k => {
+          let c = colOf(k.romaji);
+          if (cells[c]) c = cells.indexOf(null);
+          if (c < 0) c = cells.push(null) - 1;
+          cells[c] = k;
+        });
+        const rom = g.items[0].romaji;
+        return { label: (rom.replace(/[aiueo]+$/, '') || rom).toUpperCase(), cells };
+      });
+    }
+    const sections = types.filter(t => st.type === 'all' || t === st.type)
+      .map(t => ({ t, rows: buildRows(list.filter(k => k.type === t)) }));
+    const cellHTML = k => k
+      ? `<div class="kana-cell ${SRS.mastery(k.id) > 0 ? 'learned' : ''}" data-id="${k.id}" data-char="${esc(k.char)}">
+           <b>${esc(k.char)}</b><span>${esc(k.romaji)}</span></div>`
+      : '<div class="kana-empty"></div>';
+
     root.innerHTML = `
       <div class="section-head"><h1>Bảng chữ cái</h1>
         <div class="row">
@@ -683,12 +713,20 @@ V.kana = function (root, params) {
         <button class="btn primary block lg" id="kexStart" style="margin-top:14px">▶ Bắt đầu thi thử</button>
       </div>
 
-      <div class="kana-grid ${N.settings().hideRomajiKana ? 'hide-romaji' : ''}">
-        ${items.map(k => `
-          <div class="kana-cell ${SRS.mastery(k.id) > 0 ? 'learned' : ''}" data-id="${k.id}" data-char="${esc(k.char)}">
-            <b>${esc(k.char)}</b><span>${esc(k.romaji)}</span>
-          </div>`).join('')}
-      </div>
+      ${sections.map(sec => `
+        <div class="section-head"><h2>${esc(TYPE_VI[sec.t] || sec.t)}</h2>
+          <span class="tiny dim">${sec.rows.length} hàng</span></div>
+        <div class="kana-table ${N.settings().hideRomajiKana ? 'hide-romaji' : ''}">
+          <div class="kana-row head">
+            <div class="kana-rowlabel"></div>
+            ${VHEAD.map(v => `<div class="kana-vh">${v}</div>`).join('')}
+          </div>
+          ${sec.rows.map(r => `
+            <div class="kana-row">
+              <div class="kana-rowlabel">${esc(r.label)}</div>
+              ${r.cells.map(cellHTML).join('')}
+            </div>`).join('')}
+        </div>`).join('')}
 
       <div class="section-head"><h2>Ghi nhớ nhanh</h2></div>
       <div class="card">
