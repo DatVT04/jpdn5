@@ -350,11 +350,13 @@ function toast(msg, kind) {
 function openModal(html) {
   const wrap = $('#modalWrap'), m = $('#modal');
   m.innerHTML = html;
+  m.scrollTop = 0;
   wrap.hidden = false;
+  document.body.classList.add('modal-open');
   wrap.onclick = e => { if (e.target === wrap) closeModal(); };
   return m;
 }
-function closeModal() { const w = $('#modalWrap'); if (w) w.hidden = true; }
+function closeModal() { const w = $('#modalWrap'); if (w) w.hidden = true; document.body.classList.remove('modal-open'); }
 
 function speakBtn(text, cls) {
   return `<button class="btn ${cls || 'sm ghost'}" data-speak="${esc(text)}" title="Nghe phát âm">🔊</button>`;
@@ -368,6 +370,40 @@ function bindSpeak(root) {
 }
 function barHTML(p, cls) { return `<div class="bar ${cls || ''}"><i style="width:${clamp(p, 0, 100)}%"></i></div>`; }
 
+/* Chuẩn hoá chuỗi tìm kiếm: bỏ dấu tiếng Việt, katakana → hiragana, chữ thường.
+   Nhờ vậy "nuoc" tìm ra "nước", "テレビ" và "てれび" là một. */
+function searchNorm(s) {
+  return kataToHira(String(s == null ? '' : s)).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/\s+/g, ' ').trim();
+}
+
+/* Gắn ô tìm kiếm KHÔNG vẽ lại chính nó khi gõ.
+   Vẽ lại <input> giữa lúc bộ gõ (Telex, kana…) đang soạn chữ khiến iOS chèn
+   chữ hai lần và nhảy con trỏ — nên chỉ gọi onSearch khi đã soạn xong. */
+function bindSearchInput(inp, onSearch, delay) {
+  let composing = false, timer = 0;
+  const fire = () => { clearTimeout(timer); timer = setTimeout(() => onSearch(inp.value), delay == null ? 90 : delay); };
+  inp.addEventListener('compositionstart', () => { composing = true; });
+  inp.addEventListener('compositionend', () => { composing = false; fire(); });
+  inp.addEventListener('input', e => { if (composing || e.isComposing) return; fire(); });
+  const clear = inp.parentElement && inp.parentElement.querySelector('[data-clear]');
+  if (clear) {
+    const sync = () => { clear.hidden = !inp.value; };
+    inp.addEventListener('input', sync);
+    clear.addEventListener('click', () => { inp.value = ''; sync(); onSearch(''); inp.focus(); });
+    sync();
+  }
+}
+function searchBarHTML(id, value, placeholder) {
+  return `<div class="search-bar">
+    <span class="search-ico" aria-hidden="true">🔍</span>
+    <input type="search" id="${id}" value="${esc(value)}" placeholder="${esc(placeholder)}"
+      enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <button type="button" class="search-clear" data-clear aria-label="Xoá" hidden>✕</button>
+  </div>`;
+}
+
 global.N5 = {
   $, $$, esc, shuffle, pick, sample, clamp, todayKey, daysBetween, fmtDur, pct,
   kanaToRomaji, normRomaji, kataToHira, answerMatches,
@@ -375,6 +411,7 @@ global.N5 = {
   state, settings, setSetting, save, load, resetAll,
   logDay, todayStats, logAnswer, SRS, TTS,
   toast, openModal, closeModal, speakBtn, bindSpeak, barHTML,
+  searchNorm, bindSearchInput, searchBarHTML,
   KEY, DEFAULTS
 };
 })(window);

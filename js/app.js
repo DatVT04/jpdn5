@@ -30,8 +30,10 @@ const App = {
 
   refreshBadges() {
     const due = SRS.dueCount();
-    const b = $('#dueBadge');
-    if (b) { b.textContent = due; b.dataset.zero = due ? '0' : '1'; }
+    ['#dueBadge', '#dueBadgeTab'].forEach(sel => {
+      const b = $(sel);
+      if (b) { b.textContent = due > 99 ? '99+' : due; b.dataset.zero = due ? '0' : '1'; }
+    });
 
     const s = N.state();
     const chip = $('#streakChip');
@@ -79,8 +81,19 @@ const App = {
     document.title = (TITLES[route] || 'Ôn luyện') + ' — N5 道場';
     $$('#mainNav .nav-item, #tabbar a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
     $('#sidebar').classList.remove('open');
+    App.markDupTitle();
     App.refreshBadges();
     N.bindSpeak(view);
+  },
+
+  /* Trên mobile thanh trên đã hiện tên trang → đánh dấu tiêu đề lớn trùng lặp để CSS ẩn đi */
+  markDupTitle() {
+    const view = $('#view');
+    const head = view.firstElementChild;
+    if (!head || !head.classList.contains('section-head')) return;
+    const h1 = head.querySelector('h1');
+    const title = ($('#pageTitle').textContent || '').trim().toLowerCase();
+    if (h1 && title && h1.textContent.trim().toLowerCase().includes(title)) head.dataset.dup = '1';
   },
 
   /* ---------- Tìm kiếm nhanh ---------- */
@@ -92,16 +105,17 @@ const App = {
     setTimeout(() => inp.focus(), 30);
   },
   closePalette() { $('#paletteWrap').hidden = true; },
+  isMobile() { return window.matchMedia('(max-width: 1000px)').matches; },
 
   paletteResults(q) {
     const box = $('#paletteResults');
-    q = (q || '').trim().toLowerCase();
+    q = N.searchNorm(q);
     let list;
     if (!q) {
       list = N.sample(DATA.kanji, 4).concat(N.sample(DATA.vocab, 3), N.sample(DATA.grammar, 3));
     } else {
-      const hay = it => [it.char, it.word, it.kana, it.romaji, it.hanviet, it.meaning_vi, it.pattern, it.usage_vi, it.counter]
-        .filter(Boolean).join(' ').toLowerCase();
+      const hay = it => N.searchNorm([it.char, it.word, it.kana, it.romaji, it.hanviet, it.meaning_vi, it.pattern, it.usage_vi, it.counter]
+        .filter(Boolean).join(' '));
       list = [].concat(DATA.kanji, DATA.vocab, DATA.grammar, DATA.counters, DATA.kanaAll)
         .filter(it => hay(it).includes(q)).slice(0, 30);
     }
@@ -130,12 +144,22 @@ const App = {
     if (!location.hash) location.hash = '#/home';
     App.render();
 
+    /* các màn tự vẽ lại bên trong → đánh dấu lại tiêu đề trùng */
+    new MutationObserver(() => App.markDupTitle()).observe($('#view'), { childList: true });
+
+    /* các màn tự vẽ lại bên trong → đánh dấu lại tiêu đề trùng */
+    new MutationObserver(() => App.markDupTitle()).observe($('#view'), { childList: true });
+
     /* nút & phím */
     $('#themeToggle').onclick = App.toggleTheme;
     $('#menuBtn').onclick = () => $('#sidebar').classList.toggle('open');
-    $('#searchBtn').onclick = App.openPalette;
+    /* Mobile: bàn phím ảo che mất palette nổi → mở hẳn trang Tra cứu */
+    $('#searchBtn').onclick = () => {
+      if (App.isMobile()) location.hash = '#/browse?focus=1';
+      else App.openPalette();
+    };
     $('#paletteWrap').onclick = e => { if (e.target.id === 'paletteWrap') App.closePalette(); };
-    $('#paletteInput').addEventListener('input', e => App.paletteResults(e.target.value));
+    N.bindSearchInput($('#paletteInput'), v => App.paletteResults(v), 60);
 
     document.addEventListener('keydown', e => {
       const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);

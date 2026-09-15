@@ -74,6 +74,13 @@ function listeningBlock(nResp, nPoint) {
   return out;
 }
 
+/* Đề chỉ có 1–4 ký tự (kana, kanji) → hiển thị cỡ lớn cho dễ nhìn nét */
+function bigPrompt(q) {
+  if (q.promptCls) return false;
+  const text = String(q.promptHTML || '').replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, 'x').trim();
+  return text.length > 0 && text.length <= 4 && /[぀-ヿ一-龯]/.test(text);
+}
+
 function wrapQ(q) {
   return {
     label: q.label,
@@ -251,9 +258,9 @@ V.exam = function (root, params) {
       left = sec.minutes * 60;
       root.innerHTML = `
         <div class="exam-timer" id="exTimer">
-          <div>
-            <div class="tiny dim">PHẦN ${si + 1}/${sections.length}</div>
-            <div class="jp" style="font-weight:700">${esc(sec.name)} <span class="tiny dim">${esc(sec.vi)}</span></div>
+          <div class="et-info">
+            <div class="tiny dim et-part">PHẦN ${si + 1}/${sections.length}</div>
+            <div class="jp et-name" style="font-weight:700">${esc(sec.name)} <span class="tiny dim">${esc(sec.vi)}</span></div>
           </div>
           <div class="clock" id="exClock" style="margin-left:auto">${timed ? fmtDur(left) : '∞'}</div>
           <button class="btn sm primary" id="exSubmit">Nộp phần này</button>
@@ -277,7 +284,7 @@ V.exam = function (root, params) {
         return head + `
           <div class="exam-q" id="exq${i}">
             <div class="no">問 ${i + 1} · ${esc(q.label)}</div>
-            <div class="body ${q.promptCls || ''}">${q.promptHTML}</div>
+            <div class="body ${q.promptCls || ''} ${bigPrompt(q) ? 'big' : ''}">${q.promptHTML}</div>
             ${q.sub ? `<div class="tiny dim" style="margin:-8px 0 12px">${esc(q.sub)}</div>` : ''}
             ${q.audio ? `<div style="margin:-6px 0 14px"><button class="btn sm" data-audio="${esc(q.audio)}">🔊 Nghe</button>
               <span class="tiny dim" style="margin-left:8px">có thể nghe lại nhiều lần</span></div>` : ''}
@@ -496,7 +503,7 @@ V.exam = function (root, params) {
           return `<div class="exam-q">
             <div class="no">${ok ? '✅' : '❌'} 問 ${i + 1} · ${esc(q.label)}</div>
             ${q.passage ? `<div class="tiny dim jp" style="margin:6px 0">${esc(q.passage.jp)}</div>` : ''}
-            <div class="body">${q.promptHTML}</div>
+            <div class="body ${bigPrompt(q) ? 'big' : ''}">${q.promptHTML}</div>
             <div class="exam-opts">
               ${q.options.map((o, x) => `<div class="exam-opt ${x === q.answer ? 'ok' : (x === ua ? 'bad' : '')}">
                 <span class="n">${x + 1}</span><span class="${q.optJp ? 'jp' : ''}">${esc(o)}</span></div>`).join('')}

@@ -41,7 +41,7 @@ function detailHTML(it) {
       </div>`;
   } else if (deck === 'vocab') {
     body = `
-      <div class="detail-jp" style="font-size:52px">${esc(it.word)}</div>
+      <div class="detail-jp ${it.word.length > 7 ? 'xlong' : it.word.length > 4 ? 'long' : ''}">${esc(it.word)}</div>
       <div class="center" style="margin-top:8px"><span class="jp" style="color:var(--sakura);font-size:19px">${esc(it.kana)}</span></div>
       <div class="center" style="margin-top:10px">${N.speakBtn(it.word, 'sm')}</div>
       <div class="kv">
@@ -71,7 +71,7 @@ function detailHTML(it) {
       <div class="tiny dim" style="margin-top:10px">Nhóm: ${esc(DATA.cat.grammar[it.category] || it.category)}</div>`;
   } else if (deck === 'counter') {
     body = `
-      <div class="detail-jp" style="font-size:46px">${esc(it.counter)}</div>
+      <div class="detail-jp long">${esc(it.counter)}</div>
       <div class="center muted" style="margin-top:8px">${esc(it.usage_vi)}</div>
       <div class="list" style="margin-top:14px">
         ${(it.readings || []).map((r, i) => `
@@ -144,7 +144,7 @@ function startCards(root, items, opt) {
       <button class="grade" data-g="2"><b>Tốt</b><span>3 ngày</span></button>
       <button class="grade" data-g="3"><b>Dễ</b><span>6 ngày+</span></button>
     </div>
-    <p class="center tiny dim" style="margin-top:14px">Space/click để lật · phím 1–4 để chấm · S để nghe</p>`;
+    <p class="center tiny dim kbd-hint" style="margin-top:14px">Space/click để lật · phím 1–4 để chấm · S để nghe</p>`;
 
   const bar = root.querySelector('.bar > i');
   const card = root.querySelector('#fcard');
@@ -683,14 +683,12 @@ V.kana = function (root, params) {
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:14px;border-color:color-mix(in srgb,var(--sakura) 40%,transparent)">
-        <div class="spread">
-          <div>
-            <h2>📝 Thi thử bảng chữ cái</h2>
-            <p class="tiny dim" style="margin:6px 0 0">Đề trộn: nhận mặt chữ · viết chữ theo romaji · phân biệt chữ dễ nhầm (シ/ツ, ソ/ン, ぬ/め…) · quy tắc trường âm – っ – âm ghép · đọc từ katakana. Có bấm giờ, chấm điểm và liệt kê chữ sai.</p>
-          </div>
-        </div>
-        <div class="grid g3" style="margin-top:14px">
+      <div class="card kex-card" style="margin-bottom:14px">
+        <h2>📝 Thi thử bảng chữ cái</h2>
+        <p class="tiny dim kex-desc">Đề trộn: nhận mặt chữ · viết chữ theo romaji · phân biệt chữ dễ nhầm (シ/ツ, ソ/ン, ぬ/め…) · quy tắc trường âm – っ – âm ghép · đọc từ katakana. Có bấm giờ, chấm điểm và liệt kê chữ sai.</p>
+        <details class="kex-opts" id="kexOpts">
+          <summary><span>⚙️ Tuỳ chọn đề</span><span class="tiny dim" id="kexSummary"></span></summary>
+        <div class="grid g3" style="margin-top:12px">
           <label class="field"><span>Phạm vi</span>
             <select id="kexScope">
               <option value="both">Cả 2 bảng (hiragana + katakana)</option>
@@ -710,7 +708,8 @@ V.kana = function (root, params) {
               <option value="0">Không giới hạn</option>
             </select></label>
         </div>
-        <button class="btn primary block lg" id="kexStart" style="margin-top:14px">▶ Bắt đầu thi thử</button>
+        </details>
+        <button class="btn primary block lg" id="kexStart" style="margin-top:12px">▶ Bắt đầu thi thử</button>
       </div>
 
       ${sections.map(sec => `
@@ -752,6 +751,18 @@ V.kana = function (root, params) {
       QUIZ.renderQuiz(root, qs, { onQuit: draw, onAgain: kanaDrill });
     }
     root.querySelector('#kQuiz').onclick = kanaQuiz;
+    const kexSel = ['#kexScope', '#kexN', '#kexTimed'].map(id => root.querySelector(id));
+    const kexSummary = () => {
+      const [scope, n, timed] = kexSel;
+      root.querySelector('#kexSummary').textContent = [
+        { both: 'Cả 2 bảng', hiragana: 'Hiragana', katakana: 'Katakana' }[scope.value],
+        n.value + ' câu',
+        timed.value === '1' ? 'bấm giờ' : 'không giới hạn'
+      ].join(' · ');
+    };
+    kexSel.forEach(el => el.onchange = kexSummary);
+    kexSummary();
+    if (!App.isMobile()) root.querySelector('#kexOpts').open = true;
     root.querySelector('#kexStart').onclick = () => {
       const scope = root.querySelector('#kexScope').value;
       const n = root.querySelector('#kexN').value;
@@ -766,145 +777,172 @@ V.kana = function (root, params) {
 /* ============ NGỮ PHÁP ============ */
 V.grammar = function (root, params) {
   const st = { cat: params.cat || 'all', q: '' };
+  const cats = DATA.cat.grammar;
+  const hay = {};
+  DATA.grammar.forEach(g => { hay[g.id] = N.searchNorm([g.pattern, g.meaning_vi, g.formation, g.example.jp, g.example.kana, g.example.romaji, g.example.vi].join(' ')); });
 
-  function draw() {
-    const cats = DATA.cat.grammar;
-    let list = DATA.grammar.slice();
+  function filtered() {
+    let list = DATA.grammar;
     if (st.cat !== 'all') list = list.filter(g => g.category === st.cat);
-    if (st.q) {
-      const q = st.q.toLowerCase();
-      list = list.filter(g => (g.pattern + g.meaning_vi + g.formation + g.example.jp + g.example.vi).toLowerCase().includes(q));
-    }
+    const q = N.searchNorm(st.q);
+    if (q) list = list.filter(g => hay[g.id].includes(q));
+    return list;
+  }
 
+  function shell() {
     root.innerHTML = `
       <div class="section-head"><h1>Sổ tay ngữ pháp</h1>
-        <button class="btn sm pink" id="gQuiz">🎯 Kiểm tra ${st.cat === 'all' ? 'tổng hợp' : 'nhóm này'}</button></div>
+        <button class="btn sm pink" id="gQuiz"></button></div>
+      ${N.searchBarHTML('gSearch', st.q, 'Tìm mẫu câu, ý nghĩa, ví dụ…')}
+      <div class="chips scroll" id="gCats" style="margin-bottom:14px"></div>
+      <div class="grid" id="gList" style="gap:10px"></div>`;
+    N.bindSearchInput(root.querySelector('#gSearch'), v => { st.q = v; drawList(); });
+    root.querySelector('#gQuiz').onclick = grammarQuiz;
+    drawCats();
+    drawList();
+  }
 
-      <div class="search-bar">
-        <input type="text" id="gSearch" placeholder="Tìm mẫu câu, ý nghĩa, ví dụ…" value="${esc(st.q)}">
-      </div>
-      <div class="chips scroll" style="margin-bottom:14px">
-        <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả (${DATA.grammar.length})</button>
-        ${Object.keys(cats).map(c => {
-          const n = DATA.grammar.filter(g => g.category === c).length;
-          return `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(cats[c])} (${n})</button>`;
-        }).join('')}
-      </div>
+  function drawCats() {
+    root.querySelector('#gQuiz').textContent = '🎯 Kiểm tra ' + (st.cat === 'all' ? 'tổng hợp' : 'nhóm này');
+    const box = root.querySelector('#gCats');
+    box.innerHTML = `
+      <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả (${DATA.grammar.length})</button>
+      ${Object.keys(cats).map(c => {
+        const n = DATA.grammar.filter(g => g.category === c).length;
+        return `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(cats[c])} (${n})</button>`;
+      }).join('')}`;
+    box.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; drawCats(); drawList(); });
+  }
 
-      <div class="grid" style="gap:10px">
-        ${list.length ? list.map(g => {
-          const m = SRS.mastery(g.id);
-          return `
-          <div class="gr-item" data-id="${g.id}">
-            <div class="gr-head">
-              <span class="mastery-dot" data-m="${m}"></span>
-              <span class="p">${esc(g.pattern)}</span>
-              <span class="m">${esc(g.meaning_vi)}</span>
-              <span class="caret">▾</span>
-            </div>
-            <div class="gr-body">
-              <span class="gr-form">${esc(g.formation)}</span>
-              <div class="ex">
-                <div class="jp">${esc(g.example.jp)}</div>
-                <div class="kana">${esc(g.example.kana)}</div>
-                <div class="vi">${esc(g.example.vi)}</div>
-              </div>
-              <div class="row" style="margin-top:12px">
-                ${N.speakBtn(g.example.jp, 'sm')}
-                <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
-                <span class="tag">${esc(cats[g.category] || g.category)}</span>
-              </div>
-            </div>
-          </div>`;
-        }).join('') : '<div class="empty"><span class="em">🔍</span>Không tìm thấy mẫu ngữ pháp nào.</div>'}
+  function drawList() {
+    const list = filtered();
+    const box = root.querySelector('#gList');
+    box.innerHTML = list.length ? list.map(g => {
+      const m = SRS.mastery(g.id);
+      return `
+      <div class="gr-item" data-id="${g.id}">
+        <div class="gr-head">
+          <span class="mastery-dot" data-m="${m}"></span>
+          <span class="p">${esc(g.pattern)}</span>
+          <span class="m">${esc(g.meaning_vi)}</span>
+          <span class="caret">▾</span>
+        </div>
+        <div class="gr-body">
+          <span class="gr-form">${esc(g.formation)}</span>
+          <div class="ex">
+            <div class="jp">${esc(g.example.jp)}</div>
+            <div class="kana">${esc(g.example.kana)}</div>
+            <div class="vi">${esc(g.example.vi)}</div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            ${N.speakBtn(g.example.jp, 'sm')}
+            <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
+            <span class="tag">${esc(cats[g.category] || g.category)}</span>
+          </div>
+        </div>
       </div>`;
+    }).join('') : '<div class="empty"><span class="em">🔍</span>Không tìm thấy mẫu ngữ pháp nào.</div>';
 
-    const inp = root.querySelector('#gSearch');
-    inp.oninput = () => { st.q = inp.value; const p = inp.selectionStart; draw(); const n = root.querySelector('#gSearch'); n.focus(); n.setSelectionRange(p, p); };
-    root.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; draw(); });
-    root.querySelectorAll('.gr-head').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
-    root.querySelectorAll('[data-srs]').forEach(b => b.onclick = e => {
+    box.querySelectorAll('.gr-head').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+    box.querySelectorAll('[data-srs]').forEach(b => b.onclick = e => {
       e.stopPropagation();
       const c = SRS.ensure(b.dataset.srs); c.i = 0; c.d = N.todayKey(); N.save();
       N.toast('Đã thêm vào SRS ⚡', 'ok'); App.refreshBadges();
     });
-    N.bindSpeak(root);
-    function grammarQuiz() {
-      const qs = QUIZ.buildSet({ kinds: ['grammar_meaning', 'grammar_usage', 'particle'], count: 20, items: st.cat === 'all' ? null : shuffle(list) });
-      QUIZ.renderQuiz(root, qs, { onQuit: draw, onAgain: grammarQuiz });
-    }
-    root.querySelector('#gQuiz').onclick = grammarQuiz;
+    N.bindSpeak(box);
   }
-  draw();
+
+  function grammarQuiz() {
+    const list = filtered();
+    const qs = QUIZ.buildSet({ kinds: ['grammar_meaning', 'grammar_usage', 'particle'], count: 20, items: st.cat === 'all' ? null : shuffle(list) });
+    QUIZ.renderQuiz(root, qs, { onQuit: shell, onAgain: grammarQuiz });
+  }
+
+  shell();
 };
 
 /* ============ TRA CỨU ============ */
 V.browse = function (root, params) {
   const st = { type: params.type || 'kanji', q: params.q || '', cat: 'all' };
+  const TYPES = [['kanji', '漢', 'Kanji', DATA.kanji.length], ['vocab', '語', 'Từ vựng', DATA.vocab.length],
+    ['grammar', '文', 'Ngữ pháp', DATA.grammar.length], ['counter', '個', 'Lượng từ', DATA.counters.length],
+    ['kana', 'あ', 'Kana', DATA.kanaAll.length]];
 
+  const hayCache = {};
+  function hay(x) {
+    if (hayCache[x.id] == null) {
+      hayCache[x.id] = N.searchNorm([x.char, x.word, x.kana, x.romaji, x.hanviet, x.meaning_vi, x.pattern, x.formation, x.usage_vi,
+        x.counter, (x.onyomi || []).join(' '), (x.kunyomi || []).join(' '), (x.readings || []).join(' '),
+        x.example && x.example.jp, x.example && x.example.vi,
+        (x.examples || []).map(e => e.word + ' ' + e.kana + ' ' + e.meaning_vi).join(' ')].filter(Boolean).join(' '));
+    }
+    return hayCache[x.id];
+  }
   function results() {
-    const q = st.q.trim().toLowerCase();
     let pool = st.type === 'kanji' ? DATA.kanji
       : st.type === 'vocab' ? DATA.vocab
       : st.type === 'grammar' ? DATA.grammar
       : st.type === 'counter' ? DATA.counters
       : DATA.kanaAll;
     if (st.cat !== 'all') pool = pool.filter(x => (x.category || x.topic) === st.cat);
-    if (!q) return pool;
-    return pool.filter(x => searchText(x).includes(q));
-  }
-  function searchText(x) {
-    return [x.char, x.word, x.kana, x.romaji, x.hanviet, x.meaning_vi, x.pattern, x.formation, x.usage_vi,
-      x.counter, (x.onyomi || []).join(''), (x.kunyomi || []).join(''), (x.readings || []).join(''),
-      x.example && x.example.jp, x.example && x.example.vi,
-      (x.examples || []).map(e => e.word + e.kana + e.meaning_vi).join('')].filter(Boolean).join(' ').toLowerCase();
+    const q = N.searchNorm(st.q);
+    return q ? pool.filter(x => hay(x).includes(q)) : pool;
   }
 
-  function draw() {
-    const list = results();
-    const catMap = st.type === 'kanji' ? DATA.cat.kanji : st.type === 'vocab' ? DATA.cat.vocab_topic : st.type === 'grammar' ? DATA.cat.grammar : null;
-
+  function shell() {
     root.innerHTML = `
-      <div class="section-head"><h1>Tra cứu</h1><span class="tiny dim">${list.length} kết quả</span></div>
-      <div class="search-bar">
-        <input type="text" id="bSearch" placeholder="Nhập kanji, kana, romaji hoặc nghĩa tiếng Việt…" value="${esc(st.q)}">
-      </div>
-      <div class="chips" style="margin-bottom:12px">
-        ${[['kanji', '漢 Kanji', DATA.kanji.length], ['vocab', '語 Từ vựng', DATA.vocab.length], ['grammar', '文 Ngữ pháp', DATA.grammar.length],
-           ['counter', '個 Lượng từ', DATA.counters.length], ['kana', 'あ Kana', DATA.kanaAll.length]]
-          .map(([k, l, n]) => `<button class="chip ${st.type === k ? 'on' : ''}" data-type="${k}">${l} (${n})</button>`).join('')}
-      </div>
-      ${catMap ? `<div class="chips scroll" style="margin-bottom:14px">
-        <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả</button>
-        ${Object.keys(catMap).map(c => `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(catMap[c])}</button>`).join('')}
-      </div>` : ''}
-
-      ${!list.length ? '<div class="empty"><span class="em">🔍</span>Không tìm thấy. Thử từ khoá khác nhé.</div>'
-        : st.type === 'kanji'
-        ? `<div class="grid g4">${list.map(k => `
-            <div class="kanji-tile" data-id="${k.id}">
-              <b>${esc(k.char)}</b><span>${esc(k.hanviet)}<br>${esc(k.meaning_vi)}</span>
-            </div>`).join('')}</div>`
-        : st.type === 'kana'
-        ? `<div class="kana-grid">${list.map(k => `
-            <div class="kana-cell" data-id="${k.id}"><b>${esc(k.char)}</b><span>${esc(k.romaji)}</span></div>`).join('')}</div>`
-        : `<div class="list">${list.slice(0, 300).map(x => {
-            const f = itemFace(x), m = SRS.mastery(x.id);
-            return `<div class="item" data-id="${x.id}">
-              <span class="lead ${String(f.front).length > 4 ? 'sm' : ''}">${esc(f.front)}</span>
-              <div class="body"><div class="t">${esc(f.meaning)}</div><div class="s">${esc(f.reading)}</div></div>
-              <div class="tail"><span class="mastery-dot" data-m="${m}"></span></div>
-            </div>`;
-          }).join('')}</div>`}
-      ${list.length > 300 ? '<p class="tiny dim center" style="margin-top:12px">Hiển thị 300 kết quả đầu — hãy tìm cụ thể hơn.</p>' : ''}`;
-
-    const inp = root.querySelector('#bSearch');
-    inp.oninput = () => { st.q = inp.value; const p = inp.selectionStart; draw(); const n2 = root.querySelector('#bSearch'); n2.focus(); n2.setSelectionRange(p, p); };
-    root.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { st.type = b.dataset.type; st.cat = 'all'; draw(); });
-    root.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; draw(); });
-    root.querySelectorAll('[data-id]').forEach(el => el.onclick = () => showDetail(DATA.byId[el.dataset.id]));
+      <div class="section-head"><h1>Tra cứu</h1><span class="tiny dim" id="bCount"></span></div>
+      ${N.searchBarHTML('bSearch', st.q, 'Tìm kanji, kana, romaji, nghĩa…')}
+      <div class="chips scroll" id="bTypes" style="margin-bottom:10px"></div>
+      <div class="chips scroll" id="bCats" style="margin-bottom:14px"></div>
+      <div id="bList"></div>`;
+    N.bindSearchInput(root.querySelector('#bSearch'), v => { st.q = v; drawList(); });
+    drawFilters();
+    drawList();
+    if (params.focus) setTimeout(() => root.querySelector('#bSearch').focus(), 60);
   }
-  draw();
+
+  function drawFilters() {
+    const types = root.querySelector('#bTypes');
+    types.innerHTML = TYPES.map(([k, ic, l, n]) =>
+      `<button class="chip ${st.type === k ? 'on' : ''}" data-type="${k}"><span class="jp">${ic}</span> ${l} <small>${n}</small></button>`).join('');
+    types.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { st.type = b.dataset.type; st.cat = 'all'; drawFilters(); drawList(); });
+
+    const catMap = st.type === 'kanji' ? DATA.cat.kanji : st.type === 'vocab' ? DATA.cat.vocab_topic : st.type === 'grammar' ? DATA.cat.grammar : null;
+    const cats = root.querySelector('#bCats');
+    cats.hidden = !catMap;
+    cats.innerHTML = catMap ? `
+      <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả</button>
+      ${Object.keys(catMap).map(c => `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(catMap[c])}</button>`).join('')}` : '';
+    cats.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; drawFilters(); drawList(); });
+  }
+
+  function drawList() {
+    const list = results();
+    root.querySelector('#bCount').textContent = list.length + ' kết quả';
+    const box = root.querySelector('#bList');
+    box.innerHTML = (!list.length ? '<div class="empty"><span class="em">🔍</span>Không tìm thấy. Thử từ khoá khác nhé.</div>'
+      : st.type === 'kanji'
+      ? `<div class="kanji-grid">${list.map(k => `
+          <div class="kanji-tile" data-id="${k.id}">
+            <b>${esc(k.char)}</b><span>${esc(k.hanviet)}<br>${esc(k.meaning_vi)}</span>
+          </div>`).join('')}</div>`
+      : st.type === 'kana'
+      ? `<div class="kana-grid">${list.map(k => `
+          <div class="kana-cell" data-id="${k.id}"><b>${esc(k.char)}</b><span>${esc(k.romaji)}</span></div>`).join('')}</div>`
+      : `<div class="list">${list.slice(0, 300).map(x => {
+          const f = itemFace(x), m = SRS.mastery(x.id);
+          return `<div class="item" data-id="${x.id}">
+            <span class="lead ${String(f.front).length > 4 ? 'sm' : ''}">${esc(f.front)}</span>
+            <div class="body"><div class="t">${esc(f.meaning)}</div><div class="s">${esc(f.reading)}</div></div>
+            <div class="tail"><span class="mastery-dot" data-m="${m}"></span></div>
+          </div>`;
+        }).join('')}</div>`)
+      + (list.length > 300 ? '<p class="tiny dim center" style="margin-top:12px">Hiển thị 300 kết quả đầu — hãy tìm cụ thể hơn.</p>' : '');
+    box.querySelectorAll('[data-id]').forEach(el => el.onclick = () => showDetail(DATA.byId[el.dataset.id]));
+  }
+
+  shell();
 };
 
 global.N5.VIEWS = Object.assign(global.N5.VIEWS || {}, V);

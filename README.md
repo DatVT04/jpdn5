@@ -25,12 +25,18 @@ rồi mở http://localhost:5177
 | **Luyện tập** | 21 dạng câu hỏi: nghĩa kanji, âm Hán Việt, cách đọc, chính tả (表記), nghĩa từ, trợ từ, mẫu ngữ pháp, **chia động từ**, kana, lượng từ, số đếm. Có chế độ gõ chữ (nhận cả kana lẫn romaji) |
 | **Bảng chữ cái** | Hiragana + katakana đầy đủ (gojuon/dakuon/youon/gairaigo), ẩn romaji để tự kiểm tra, luyện gõ, và **đề thi thử kana** (20/40/60/80 câu, chọn phạm vi 1 hoặc cả 2 bảng, có bấm giờ) |
 | **Ngữ pháp** | 94 mẫu chia 12 nhóm, ví dụ có kana + bản dịch, phát âm, kiểm tra theo nhóm |
-| **Tra cứu** | Tìm theo kanji/kana/romaji/nghĩa tiếng Việt; phím `/` mở tìm kiếm nhanh ở mọi màn hình |
+| **Tra cứu** | Tìm theo kanji/kana/romaji/nghĩa tiếng Việt — gõ **không dấu** cũng ra (`nuoc` → nước), katakana/hiragana như nhau; an toàn với bộ gõ Telex và bàn phím kana trên iOS; phím `/` mở tìm kiếm nhanh |
 | **Thi thử** | **Đề bảng chữ cái** (trộn nhận mặt chữ · viết theo romaji · chữ dễ nhầm · quy tắc trường âm/っ/âm ghép · từ katakana, chấm theo %, mốc đạt 90%). Đề đầy đủ 3 phần (文字・語彙 25′ · 文法・読解 50′ · 聴解 30′), tính giờ từng phần, chấm theo nhóm A (120đ, liệt 38) và B (60đ, liệt 19), tổng đỗ ≥ 80. Có đề lẻ từng phần và mini test 15′ |
 | **Thống kê** | Biểu đồ hoạt động 14 ngày, phân bố trình độ thẻ, độ chính xác theo bộ, lịch sử điểm thi thử, 15 mục hay sai nhất |
 | **Cài đặt** | Sáng/tối, ẩn romaji, tự động phát âm, tốc độ đọc, mục tiêu ngày, ngày thi, xuất/nhập tiến độ `.json`, xoá dữ liệu |
 
 Câu trả lời sai được tự động đẩy vào hàng đợi SRS để gặp lại sớm.
+
+### Trên điện thoại
+- Thanh tab dưới: Nhà · Ôn tập (có số thẻ đến hạn) · Kana · Luyện · Thi thử; nút 🔍 trên cùng mở Tra cứu, ☰ mở toàn bộ menu
+- Khi đang làm bài, lật thẻ hoặc thi, thanh tab tự ẩn để không bấm nhầm thoát; nút **Tiếp theo** nằm cố định ở vùng ngón cái
+- Chi tiết từ/kanji mở dạng bottom sheet; ô nhập giữ cỡ 16px để iOS không tự phóng to
+- Thêm vào màn hình chính (Safari → Chia sẻ → *Thêm vào MH chính*) để dùng như app toàn màn hình, có icon riêng
 
 ## Phím tắt
 
@@ -40,6 +46,7 @@ Câu trả lời sai được tự động đẩy vào hàng đợi SRS để g�
 
 ```
 index.html
+manifest.webmanifest   cấu hình cài như app (PWA) + icons/
 css/style.css          giao diện (2 theme, responsive, bottom-nav trên mobile)
 data/n5-data.js        dữ liệu N5 gốc (102 kanji · 549 từ · 94 ngữ pháp · kana · lượng từ)
 data/n5-extra.js       8 đoạn đọc hiểu + 24 bài nghe + 18 câu quy tắc đọc kana (biên soạn thêm)

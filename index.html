@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Ôn luyện JLPT N5 – kanji, từ vựng, ngữ pháp, kana, chia động từ, thi thử. Học bằng SRS, nhắm điểm cao.">
-<meta name="theme-color" content="#0e1020">
+<meta name="theme-color" content="#0b0d1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="N5 道場">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>N5 道場 — Ôn luyện JLPT N5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,11 +73,11 @@
 
   <!-- ===== Mobile bottom nav ===== -->
   <nav class="tabbar" id="tabbar">
-    <a href="#/home"      data-route="home"><span>🏠</span>Nhà</a>
-    <a href="#/review"    data-route="review"><span>⚡</span>Ôn tập</a>
-    <a href="#/quiz"      data-route="quiz"><span>🎯</span>Luyện</a>
-    <a href="#/browse"    data-route="browse"><span>🔍</span>Tra</a>
-    <a href="#/exam"      data-route="exam"><span>📝</span>Thi</a>
+    <a href="#/home"   data-route="home"><span>🏠</span>Nhà</a>
+    <a href="#/review" data-route="review"><span>⚡</span>Ôn tập<em class="tb-badge" id="dueBadgeTab" data-zero="1">0</em></a>
+    <a href="#/kana"   data-route="kana"><span class="jp tb-kana">あ</span>Kana</a>
+    <a href="#/quiz"   data-route="quiz"><span>🎯</span>Luyện</a>
+    <a href="#/exam"   data-route="exam"><span>📝</span>Thi thử</a>
   </nav>
 </div>
 

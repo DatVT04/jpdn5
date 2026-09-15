@@ -584,14 +584,14 @@ function renderQuiz(root, questions, opt) {
     host.innerHTML = `
       <div class="q-card">
         <div class="q-prompt-label">${esc(q.label)}</div>
-        <div class="q-prompt ${q.promptCls || ''}">${promptHTML}</div>
+        <div class="q-prompt ${q.promptCls || ''} ${!q.promptCls && String(q.prompt || '').length > 4 ? 'long' : ''}">${promptHTML}</div>
         ${q.sub ? `<div class="q-sub">${esc(q.sub)}</div>` : ''}
         ${q.speak ? `<div style="margin-top:10px">${N.speakBtn(q.speak)}</div>` : ''}
         ${body}
         <div class="verdict" id="qVerdict"></div>
       </div>
       <div class="row" style="justify-content:space-between;margin-top:14px">
-        <span class="tiny dim">Phím 1–4 để chọn · Enter để tiếp tục</span>
+        <span class="tiny dim kbd-hint">Phím 1–4 để chọn · Enter để tiếp tục</span>
         <button class="btn sm" id="qNext" style="display:none">Tiếp theo →</button>
       </div>`;
 
