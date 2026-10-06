@@ -27,8 +27,7 @@ function detailHTML(it) {
         <span class="k">Nghĩa</span><span class="v plain">${esc(it.meaning_vi)}</span>
         <span class="k">Âm On</span><span class="v">${esc((it.onyomi || []).join('・') || '—')}</span>
         <span class="k">Âm Kun</span><span class="v">${esc((it.kunyomi || []).join('・') || '—')}</span>
-        <span class="k">Số nét</span><span class="v plain">${it.strokes}</span>
-        <span class="k">Nhóm</span><span class="v plain">${esc(DATA.cat.kanji[it.category] || it.category)}${it.core ? ' <span class="tag core">cốt lõi</span>' : ''}</span>
+        <span class="k">Chương</span><span class="v plain"><a href="#/chapter?no=${it.ch}" class="tag" style="text-decoration:none">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</a></span>
       </div>
       <h3 style="margin-top:18px">Từ ví dụ</h3>
       <div class="list" style="margin-top:8px">
@@ -47,8 +46,8 @@ function detailHTML(it) {
       <div class="kv">
         <span class="k">Nghĩa</span><span class="v plain"><b>${esc(it.meaning_vi)}</b></span>
         <span class="k">Romaji</span><span class="v plain">${esc(it.romaji)}</span>
-        <span class="k">Từ loại</span><span class="v plain">${esc(DATA.cat.pos[it.pos] || it.pos)}</span>
-        <span class="k">Chủ đề</span><span class="v plain">${esc(DATA.cat.vocab_topic[it.topic] || it.topic)}</span>
+        <span class="k">Từ loại</span><span class="v plain">${esc(it.pos_vi || it.pos || '—')}</span>
+        <span class="k">Chương</span><span class="v plain"><a href="#/chapter?no=${it.ch}" class="tag" style="text-decoration:none">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</a></span>
       </div>
       ${it.conjugation ? `
         <h3 style="margin-top:18px">Bảng chia (nhóm ${it.verb_group})</h3>
@@ -61,14 +60,15 @@ function detailHTML(it) {
     body = `
       <div class="center"><span class="jp" style="font-size:32px;font-weight:700">${esc(it.pattern)}</span></div>
       <div class="center muted" style="margin-top:6px">${esc(it.meaning_vi)}</div>
-      <div class="center"><span class="gr-form">${esc(it.formation)}</span></div>
-      <div class="ex">
-        <div class="jp">${esc(it.example.jp)}</div>
-        <div class="kana">${esc(it.example.kana)}</div>
-        <div class="vi">${esc(it.example.vi)}</div>
-        <div style="margin-top:8px">${N.speakBtn(it.example.jp)}</div>
-      </div>
-      <div class="tiny dim" style="margin-top:10px">Nhóm: ${esc(DATA.cat.grammar[it.category] || it.category)}</div>`;
+      ${(it.explain || []).length ? `<ul class="muted" style="margin:14px 0 0;padding-left:20px;line-height:1.75">
+        ${it.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${(it.examples || []).length ? `<h3 style="margin-top:16px">Câu ví dụ</h3>
+        ${it.examples.map(x => `<div class="ex" style="margin-top:8px">
+          <div class="jp">${esc(x)}</div>
+          <div style="margin-top:6px">${N.speakBtn(x)}</div></div>`).join('')}` : ''}
+      <div class="tiny dim" style="margin-top:12px">
+        <a href="#/chapter?no=${it.ch}" class="tag" style="text-decoration:none">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</a>
+        ${it.page ? ' <span class="tag">trang ' + it.page + ' trong sách</span>' : ''}</div>`;
   } else if (deck === 'counter') {
     body = `
       <div class="detail-jp long">${esc(it.counter)}</div>
@@ -166,16 +166,17 @@ function startCards(root, items, opt) {
       deck === 'kanji' ? `
         <div class="fc-mean">${esc(it.hanviet)} · ${esc(it.meaning_vi)}</div>
         <div class="fc-kana">On: ${esc((it.onyomi || []).join('・') || '—')}　Kun: ${esc((it.kunyomi || []).join('・') || '—')}</div>
-        ${(it.examples || [])[0] ? `<div class="fc-ex">${esc(it.examples[0].word)}（${esc(it.examples[0].kana)}）— ${esc(it.examples[0].meaning_vi)}</div>` : ''}`
+        ${(it.examples || [])[0] ? `<div class="fc-ex">${esc(it.examples[0].word)}（${esc(it.examples[0].kana)}）— ${esc(it.examples[0].meaning_vi)}</div>` : ''}
+        <div class="fc-romaji">Chương ${it.ch}</div>`
       : deck === 'vocab' ? `
         <div class="fc-kana">${esc(it.kana)}</div>
         <div class="fc-mean">${esc(it.meaning_vi)}</div>
         ${N.settings().showRomaji ? `<div class="fc-romaji">${esc(it.romaji)}</div>` : ''}
         ${it.conjugation ? `<div class="fc-ex">ます: ${esc(it.conjugation.masu.kana)} · て: ${esc(it.conjugation.te.kana)} · た: ${esc(it.conjugation.ta.kana)} · ない: ${esc(it.conjugation.nai.kana)}</div>` : ''}`
       : deck === 'grammar' ? `
-        <div class="fc-mean">${esc(it.meaning_vi)}</div>
-        <div class="fc-kana">${esc(it.formation)}</div>
-        <div class="fc-ex">${esc(it.example.jp)}<br><span class="tiny dim">${esc(it.example.vi)}</span></div>`
+        <div class="fc-mean">${esc(it.meaning_vi || (it.explain || [])[0] || '')}</div>
+        <div class="fc-kana">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</div>
+        ${(it.examples || [])[0] ? `<div class="fc-ex">${esc(it.examples[0])}</div>` : ''}`
       : deck === 'counter' ? `
         <div class="fc-mean">${esc(it.usage_vi)}</div>
         <div class="fc-kana">${esc((it.readings || []).join('・'))}</div>`
@@ -187,7 +188,7 @@ function startCards(root, items, opt) {
         <div class="fc-corner"><span>${esc((DECKS[deck] || {}).label || '')}</span>
           <span class="mastery-dot" data-m="${mast}"></span></div>
         <div class="fc-main ${String(f.front).length > 6 ? 'small' : ''}">${esc(f.front)}</div>
-        ${deck === 'grammar' ? `<div class="fc-romaji">${esc(it.formation)}</div>` : ''}
+        ${deck === 'grammar' ? `<div class="fc-romaji">Chương ${it.ch}${it.part ? ' · ' + esc(it.part) : ''}</div>` : ''}
         <div class="fc-hint">Nhấn để xem đáp án</div>
       </div>
       <div class="fc-face back">
@@ -279,7 +280,7 @@ V.home = function (root) {
   root.innerHTML = `
     <div class="hero">
       <h1>${esc(hello)}!</h1>
-      <p class="sub">Mỗi ngày ${goal} thẻ — đủ để đi qua toàn bộ ${DATA.meta.counts ? DATA.meta.counts.kanji : 102} kanji, ${DATA.vocab.length} từ vựng và ${DATA.grammar.length} mẫu ngữ pháp N5 trước ngày thi.</p>
+      <p class="sub">Bám sát giáo trình trên lớp: ${DATA.chapters.length} chương · ${DATA.vocab.length} từ vựng · ${DATA.kanji.length} chữ Hán · ${DATA.grammar.length} mẫu ngữ pháp. Mỗi ngày ${goal} thẻ là đủ nhịp.</p>
       <div class="row" style="margin-top:12px">${countdown}
         <span class="tag">🔥 chuỗi ${s.streak.cur || 0} ngày</span>
         <span class="tag">📈 hôm nay ${doneToday}/${goal}</span>
@@ -328,7 +329,7 @@ V.home = function (root) {
       }).join('')}
       <a class="mod-card" href="#/grammar">
         <span class="em">📐</span><h3>Sổ tay ngữ pháp</h3>
-        <p>${DATA.grammar.length} mẫu, chia ${Object.keys(DATA.cat.grammar).length} nhóm</p>
+        <p>${DATA.grammar.length} mẫu theo ${DATA.chapters.length} chương</p>
         ${N.barHTML(prog.grammar.pct)}
       </a>
     </div>
@@ -416,6 +417,27 @@ V.review = function (root) {
           <a class="btn lg ghost" href="#/quiz">Luyện tập thay thế</a>
         </div>
       </div>
+      ${(() => {
+        const cn = N.settings().chapter || 1;
+        const cc = DATA.chapters.find(x => x.no === cn);
+        if (!cc) return '';
+        const items = DATA.chapterItems(cn);
+        const learned = items.filter(x => SRS.mastery(x.id) > 0).length;
+        return `
+        <a class="card ch-current" href="#/chapter?no=${cn}" style="display:block;margin-top:16px">
+          <div class="spread">
+            <div style="min-width:0">
+              <span class="tiny dim">ĐANG HỌC THEO GIÁO TRÌNH</span>
+              <h2 style="margin:4px 0 2px">Chương ${cn} <span class="jp">${esc(cc.title_jp || '')}</span></h2>
+              <p class="tiny dim" style="margin:0">${cc.counts.vocab} từ · ${cc.counts.kanji} kanji · ${cc.counts.grammar} mẫu câu</p>
+            </div>
+            <span class="btn sm primary">Tiếp tục →</span>
+          </div>
+          <div style="margin-top:12px">${N.barHTML(pct(learned, items.length))}</div>
+          <p class="tiny dim" style="margin:6px 0 0">${learned}/${items.length} mục đã học</p>
+        </a>`;
+      })()}
+
       <div class="grid g4" style="margin-top:16px">
         ${Object.keys(DECKS).map(d => { const p = SRS.deckProgress(d);
           return `<div class="stat"><div class="k">${DECKS[d].label}</div><div class="v">${p.learned}<small>/${p.total}</small></div>${N.barHTML(p.pct)}</div>`; }).join('')}
@@ -458,10 +480,9 @@ function pickNew(n) {
 /* ============ FLASHCARD ============ */
 V.flashcard = function (root, params) {
   const deck = params.deck && DECKS[params.deck] ? params.deck : 'kanji';
-  const catMap = deck === 'kanji' ? DATA.cat.kanji
-    : deck === 'vocab' ? DATA.cat.vocab_topic
-    : deck === 'grammar' ? DATA.cat.grammar : null;
-  const catKey = deck === 'vocab' ? 'topic' : 'category';
+  const byChapter = ['kanji', 'vocab', 'grammar'].includes(deck);
+  const catMap = byChapter ? DATA.cat.chapter : null;
+  const catKey = 'ch';
   const state = { cat: params.cat || 'all', order: 'new', only: 'all' };
 
   function draw() {
@@ -474,8 +495,9 @@ V.flashcard = function (root, params) {
           ${Object.keys(DECKS).map(d => `<button class="chip ${d === deck ? 'on' : ''}" data-deck="${d}">${DECKS[d].icon} ${DECKS[d].label}</button>`).join('')}
         </div>
         ${catMap ? `<div class="chips scroll" style="margin-bottom:12px">
-          <button class="chip ${state.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả</button>
-          ${Object.keys(catMap).map(c => `<button class="chip ${state.cat === c ? 'on' : ''}" data-cat="${c}">${esc(catMap[c])}</button>`).join('')}
+          <button class="chip ${state.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả 14 chương</button>
+          ${DATA.chapters.map(c => `<button class="chip ${String(state.cat) === String(c.no) ? 'on' : ''}"
+            data-cat="${c.no}" title="${esc(c.title_jp)}">C${c.no}</button>`).join('')}
         </div>` : ''}
         <div class="grid g2">
           <label class="field"><span>Thứ tự</span>
@@ -491,7 +513,6 @@ V.flashcard = function (root, params) {
               <option value="unlearned">Chỉ thẻ chưa học</option>
               <option value="learning">Đang học (chưa thuộc)</option>
               <option value="due">Chỉ thẻ đến hạn</option>
-              ${deck === 'kanji' ? '<option value="core">Chỉ 80 kanji cốt lõi</option>' : ''}
               ${deck === 'vocab' ? '<option value="verb">Chỉ động từ</option>' : ''}
             </select></label>
         </div>
@@ -533,16 +554,16 @@ V.flashcard = function (root, params) {
 
   function filtered() {
     let items = DECKS[deck].items().slice();
-    if (catMap && state.cat !== 'all') items = items.filter(x => x[catKey] === state.cat);
+    if (catMap && state.cat !== 'all') items = items.filter(x => String(x[catKey]) === String(state.cat));
     if (state.only === 'unlearned') items = items.filter(x => !SRS.card(x.id));
     if (state.only === 'learning')  items = items.filter(x => SRS.card(x.id) && SRS.mastery(x.id) < 3);
     if (state.only === 'due')       items = items.filter(x => SRS.isDue(x.id));
-    if (state.only === 'core')      items = items.filter(x => x.core);
     if (state.only === 'verb')      items = items.filter(x => x.conjugation);
     const seen = N.state().seen;
     if (state.order === 'random') items = shuffle(items);
     else if (state.order === 'new') items = items.slice().sort((a, b) => (SRS.card(a.id) ? 1 : 0) - (SRS.card(b.id) ? 1 : 0));
     else if (state.order === 'weak') items = items.slice().sort((a, b) => ((seen[b.id] || {}).w || 0) - ((seen[a.id] || {}).w || 0));
+    else if (state.order === 'seq') items = items.slice().sort((a, b) => (a.ch || 0) - (b.ch || 0) || a.id.localeCompare(b.id));
     return items;
   }
   draw();
@@ -777,13 +798,15 @@ V.kana = function (root, params) {
 /* ============ NGỮ PHÁP ============ */
 V.grammar = function (root, params) {
   const st = { cat: params.cat || 'all', q: '' };
-  const cats = DATA.cat.grammar;
+  const cats = DATA.cat.chapter;
   const hay = {};
-  DATA.grammar.forEach(g => { hay[g.id] = N.searchNorm([g.pattern, g.meaning_vi, g.formation, g.example.jp, g.example.kana, g.example.romaji, g.example.vi].join(' ')); });
+  DATA.grammar.forEach(g => {
+    hay[g.id] = N.searchNorm([g.pattern, g.meaning_vi, (g.explain || []).join(' '), (g.examples || []).join(' ')].join(' '));
+  });
 
   function filtered() {
     let list = DATA.grammar;
-    if (st.cat !== 'all') list = list.filter(g => g.category === st.cat);
+    if (st.cat !== 'all') list = list.filter(g => String(g.ch) === String(st.cat));
     const q = N.searchNorm(st.q);
     if (q) list = list.filter(g => hay[g.id].includes(q));
     return list;
@@ -807,9 +830,10 @@ V.grammar = function (root, params) {
     const box = root.querySelector('#gCats');
     box.innerHTML = `
       <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả (${DATA.grammar.length})</button>
-      ${Object.keys(cats).map(c => {
-        const n = DATA.grammar.filter(g => g.category === c).length;
-        return `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(cats[c])} (${n})</button>`;
+      ${DATA.chapters.map(c => {
+        const n = DATA.grammar.filter(g => g.ch === c.no).length;
+        return `<button class="chip ${String(st.cat) === String(c.no) ? 'on' : ''}" data-cat="${c.no}"
+          title="${esc(c.title_jp)}">C${c.no} (${n})</button>`;
       }).join('')}`;
     box.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; drawCats(); drawList(); });
   }
@@ -824,20 +848,18 @@ V.grammar = function (root, params) {
         <div class="gr-head">
           <span class="mastery-dot" data-m="${m}"></span>
           <span class="p">${esc(g.pattern)}</span>
-          <span class="m">${esc(g.meaning_vi)}</span>
+          <span class="m">${esc(g.meaning_vi || (g.explain || [])[0] || '')}</span>
           <span class="caret">▾</span>
         </div>
         <div class="gr-body">
-          <span class="gr-form">${esc(g.formation)}</span>
-          <div class="ex">
-            <div class="jp">${esc(g.example.jp)}</div>
-            <div class="kana">${esc(g.example.kana)}</div>
-            <div class="vi">${esc(g.example.vi)}</div>
-          </div>
+          ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.7">
+            ${g.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+          ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${esc(x)}</div>
+            <div style="margin-top:6px">${N.speakBtn(x, 'sm')}</div></div>`).join('')}
           <div class="row" style="margin-top:12px">
-            ${N.speakBtn(g.example.jp, 'sm')}
             <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
-            <span class="tag">${esc(cats[g.category] || g.category)}</span>
+            <a class="btn sm ghost" href="#/chapter?no=${g.ch}">Chương ${g.ch}${g.part ? ' · ' + esc(g.part) : ''}</a>
+            ${g.page ? `<span class="tag">tr. ${g.page}</span>` : ''}
           </div>
         </div>
       </div>`;
@@ -873,7 +895,7 @@ V.browse = function (root, params) {
     if (hayCache[x.id] == null) {
       hayCache[x.id] = N.searchNorm([x.char, x.word, x.kana, x.romaji, x.hanviet, x.meaning_vi, x.pattern, x.formation, x.usage_vi,
         x.counter, (x.onyomi || []).join(' '), (x.kunyomi || []).join(' '), (x.readings || []).join(' '),
-        x.example && x.example.jp, x.example && x.example.vi,
+        (x.explain || []).join(' '), (x.examples || []).join(' '),
         (x.examples || []).map(e => e.word + ' ' + e.kana + ' ' + e.meaning_vi).join(' ')].filter(Boolean).join(' '));
     }
     return hayCache[x.id];
@@ -884,7 +906,7 @@ V.browse = function (root, params) {
       : st.type === 'grammar' ? DATA.grammar
       : st.type === 'counter' ? DATA.counters
       : DATA.kanaAll;
-    if (st.cat !== 'all') pool = pool.filter(x => (x.category || x.topic) === st.cat);
+    if (st.cat !== 'all') pool = pool.filter(x => String(x.ch) === String(st.cat));
     const q = N.searchNorm(st.q);
     return q ? pool.filter(x => hay(x).includes(q)) : pool;
   }
@@ -908,12 +930,13 @@ V.browse = function (root, params) {
       `<button class="chip ${st.type === k ? 'on' : ''}" data-type="${k}"><span class="jp">${ic}</span> ${l} <small>${n}</small></button>`).join('');
     types.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { st.type = b.dataset.type; st.cat = 'all'; drawFilters(); drawList(); });
 
-    const catMap = st.type === 'kanji' ? DATA.cat.kanji : st.type === 'vocab' ? DATA.cat.vocab_topic : st.type === 'grammar' ? DATA.cat.grammar : null;
+    const byCh = ['kanji', 'vocab', 'grammar'].includes(st.type);
     const cats = root.querySelector('#bCats');
-    cats.hidden = !catMap;
-    cats.innerHTML = catMap ? `
-      <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Tất cả</button>
-      ${Object.keys(catMap).map(c => `<button class="chip ${st.cat === c ? 'on' : ''}" data-cat="${c}">${esc(catMap[c])}</button>`).join('')}` : '';
+    cats.hidden = !byCh;
+    cats.innerHTML = byCh ? `
+      <button class="chip ${st.cat === 'all' ? 'on' : ''}" data-cat="all">Mọi chương</button>
+      ${DATA.chapters.map(c => `<button class="chip ${String(st.cat) === String(c.no) ? 'on' : ''}" data-cat="${c.no}"
+        title="${esc(c.title_jp)}">C${c.no}</button>`).join('')}` : '';
     cats.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { st.cat = b.dataset.cat; drawFilters(); drawList(); });
   }
 
@@ -943,6 +966,173 @@ V.browse = function (root, params) {
   }
 
   shell();
+};
+
+
+/* ============ GIÁO TRÌNH — DANH SÁCH CHƯƠNG ============ */
+function chapterStats(no) {
+  const items = DATA.chapterItems(no);
+  const learned = items.filter(x => SRS.mastery(x.id) > 0).length;
+  const mastered = items.filter(x => SRS.mastery(x.id) === 3).length;
+  const due = items.filter(x => SRS.isDue(x.id)).length;
+  return { total: items.length, learned, mastered, due, pct: pct(learned, items.length) };
+}
+
+V.chapters = function (root) {
+  const cur = N.settings().chapter || 1;
+  const cards = DATA.chapters.map(c => {
+    const st = chapterStats(c.no);
+    return `
+      <a class="mod-card ch-card ${c.no === cur ? 'current' : ''}" href="#/chapter?no=${c.no}">
+        <div class="spread">
+          <span class="ch-no">${c.no}</span>
+          ${c.no === cur ? '<span class="tag core">đang học</span>' : ''}
+          ${st.due ? `<span class="tag v3">${st.due} thẻ đến hạn</span>` : ''}
+        </div>
+        <h3 class="jp">${esc(c.title_jp || 'Chương ' + c.no)}</h3>
+        <p>${c.counts.vocab} từ · ${c.counts.kanji} kanji · ${c.counts.grammar} mẫu câu</p>
+        ${N.barHTML(st.pct, st.pct === 100 ? 'green' : '')}
+        <p class="tiny dim" style="margin-top:6px">${st.learned}/${st.total} mục đã học · ${st.mastered} đã thuộc</p>
+      </a>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="section-head"><h1>Giáo trình GUNGUN N5</h1>
+      <span class="tiny dim">${DATA.vocab.length} từ · ${DATA.kanji.length} kanji · ${DATA.grammar.length} mẫu câu</span></div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="spread">
+        <div><h2>Học theo đúng thứ tự trên lớp</h2>
+          <p class="tiny dim" style="margin:6px 0 0">Toàn bộ nội dung lấy từ bộ ${esc(DATA.meta.title || 'giáo trình')} — 14 chương, mỗi chương có từ vựng theo phần A/B/C, mẫu ngữ pháp kèm ví dụ và chữ Hán.</p></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <a class="btn primary" href="#/chapter?no=${cur}">▶ Tiếp tục chương ${cur}</a>
+        <a class="btn" href="#/exam?mode=chapter">📝 Kiểm tra theo chương</a>
+      </div>
+    </div>
+    <div class="grid g3">${cards}</div>`;
+};
+
+/* ============ CHI TIẾT MỘT CHƯƠNG ============ */
+V.chapter = function (root, params) {
+  const no = Math.min(14, Math.max(1, Number(params.no) || N.settings().chapter || 1));
+  const ch = DATA.chapters.find(c => c.no === no) || { no, parts: [], counts: {} };
+  const st = { tab: params.tab || 'vocab' };
+  const data = DATA.ofChapter(no);
+
+  function list() {
+    if (st.tab === 'vocab') {
+      const parts = Array.from(new Set(data.vocab.map(v => v.part)));
+      return parts.map(p => {
+        const items = data.vocab.filter(v => v.part === p);
+        const title = (ch.parts.find(x => x.letter === p) || {}).title_jp || '';
+        return `
+          <div class="section-head sm"><h2>Phần ${esc(p)} ${title ? `<span class="jp tiny dim">${esc(title)}</span>` : ''}</h2>
+            <span class="tiny dim">${items.length} từ</span></div>
+          <div class="list">
+            ${items.map(v => `
+              <div class="item" data-id="${v.id}">
+                <span class="lead ${v.word.length > 4 ? 'sm' : ''}">${esc(v.word)}</span>
+                <div class="body"><div class="t">${esc(v.meaning_vi)}</div>
+                  <div class="s">${esc(v.kana)}${v.pos ? ' · ' + esc(v.pos) : ''}</div></div>
+                <div class="tail"><span class="mastery-dot" data-m="${SRS.mastery(v.id)}"></span></div>
+              </div>`).join('')}
+          </div>`;
+      }).join('');
+    }
+    if (st.tab === 'grammar') {
+      return `<div class="grid" style="gap:10px">
+        ${data.grammar.map(g => `
+          <div class="gr-item" data-gid="${g.id}">
+            <div class="gr-head">
+              <span class="mastery-dot" data-m="${SRS.mastery(g.id)}"></span>
+              <span class="p">${esc(g.pattern)}</span>
+              <span class="m">${esc(g.meaning_vi || '')}</span>
+              <span class="caret">▾</span>
+            </div>
+            <div class="gr-body">
+              ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.7">
+                ${g.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+              ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${esc(x)}</div>
+                <div style="margin-top:6px">${N.speakBtn(x, 'sm')}</div></div>`).join('')}
+              <div class="row" style="margin-top:10px">
+                <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
+                <span class="tag">phần ${esc(g.part || '')}</span>
+                ${g.page ? `<span class="tag">tr. ${g.page}</span>` : ''}
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }
+    return `<div class="kanji-grid">
+      ${data.kanji.map(k => `
+        <div class="kanji-tile" data-id="${k.id}">
+          <b>${esc(k.char)}</b><span>${esc(k.hanviet)}<br>${esc(k.meaning_vi)}</span>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  function draw() {
+    const stat = chapterStats(no);
+    const isCur = (N.settings().chapter || 1) === no;
+    root.innerHTML = `
+      <div class="section-head">
+        <h1>Chương ${no}</h1>
+        <div class="row">
+          ${no > 1 ? `<a class="btn sm ghost" href="#/chapter?no=${no - 1}">←</a>` : ''}
+          ${no < 14 ? `<a class="btn sm ghost" href="#/chapter?no=${no + 1}">→</a>` : ''}
+          <a class="btn sm" href="#/chapters">Tất cả chương</a>
+        </div>
+      </div>
+
+      <div class="hero" style="padding:22px">
+        <h2 class="jp">${esc(ch.title_jp || '')}</h2>
+        <div class="row" style="margin-top:10px">
+          ${(ch.parts || []).map(p => `<span class="tag">${esc(p.letter)} · <span class="jp">${esc(p.title_jp)}</span></span>`).join('')}
+        </div>
+        <div style="margin-top:14px">${N.barHTML(stat.pct, stat.pct === 100 ? 'green' : '')}</div>
+        <p class="tiny" style="margin:8px 0 0;opacity:.85">${stat.learned}/${stat.total} mục đã học · ${stat.mastered} đã thuộc${stat.due ? ' · ' + stat.due + ' thẻ đến hạn' : ''}</p>
+        <div class="row" style="margin-top:14px">
+          <button class="btn primary" id="chCards">🃏 Học thẻ chương này</button>
+          <button class="btn pink" id="chQuiz">🎯 Luyện tập</button>
+          <a class="btn" href="#/exam?mode=chapter&ch=${no}">📝 Đề kiểm tra chương</a>
+          <button class="btn ghost" id="chSet">${isCur ? '✓ Đang học chương này' : 'Đặt làm chương đang học'}</button>
+        </div>
+      </div>
+
+      <div class="chips" style="margin:16px 0 12px">
+        <button class="chip ${st.tab === 'vocab' ? 'on' : ''}" data-tab="vocab">語 Từ vựng (${data.vocab.length})</button>
+        <button class="chip ${st.tab === 'grammar' ? 'on' : ''}" data-tab="grammar">文 Ngữ pháp (${data.grammar.length})</button>
+        <button class="chip ${st.tab === 'kanji' ? 'on' : ''}" data-tab="kanji">漢 Chữ Hán (${data.kanji.length})</button>
+      </div>
+      ${list()}`;
+
+    const pt = document.querySelector('#pageTitle');
+    if (pt) pt.textContent = 'Chương ' + no;
+    root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { st.tab = b.dataset.tab; draw(); });
+    root.querySelectorAll('[data-id]').forEach(el => el.onclick = () => showDetail(DATA.byId[el.dataset.id]));
+    root.querySelectorAll('.gr-head').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+    root.querySelectorAll('[data-srs]').forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      const c = SRS.ensure(b.dataset.srs); c.i = 0; c.d = N.todayKey(); N.save();
+      N.toast('Đã thêm vào SRS ⚡', 'ok'); App.refreshBadges();
+    });
+    N.bindSpeak(root);
+
+    const pool = st.tab === 'vocab' ? data.vocab : st.tab === 'grammar' ? data.grammar : data.kanji;
+    function cards() { startCards(root, shuffle(pool.slice()), { onQuit: draw, onAgain: cards }); }
+    function quiz() {
+      const qs = QUIZ.buildSet({ items: shuffle(DATA.chapterItems(no)), count: 20 });
+      QUIZ.renderQuiz(root, qs, { onQuit: draw, onAgain: quiz });
+    }
+    root.querySelector('#chCards').onclick = cards;
+    root.querySelector('#chQuiz').onclick = quiz;
+    root.querySelector('#chSet').onclick = () => {
+      N.setSetting('chapter', no);
+      N.toast('Đã đặt chương ' + no + ' làm chương đang học 📚', 'ok');
+      draw();
+    };
+  }
+  draw();
 };
 
 global.N5.VIEWS = Object.assign(global.N5.VIEWS || {}, V);

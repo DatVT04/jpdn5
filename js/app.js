@@ -11,6 +11,7 @@ const VIEWS = N.VIEWS;
 const TITLES = {
   home: 'Trang chủ', review: 'Ôn tập SRS', flashcard: 'Flashcard', quiz: 'Luyện tập',
   kana: 'Bảng chữ cái', grammar: 'Ngữ pháp', browse: 'Tra cứu', exam: 'Thi thử',
+  chapters: 'Giáo trình', chapter: 'Chương',
   stats: 'Thống kê', settings: 'Cài đặt'
 };
 

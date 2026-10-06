@@ -19,14 +19,15 @@ rồi mở http://localhost:5177
 
 | Màn hình | Nội dung |
 |---|---|
-| **Trang chủ** | Đếm ngược ngày thi, chuỗi ngày học, mục tiêu ngày, mức sẵn sàng thi (ước tính điểm nhóm A), heatmap 30 ngày, lộ trình gợi ý |
+| **Giáo trình 14 chương** | Toàn bộ nội dung bám sát giáo trình **GUNGUN JOUTATSU! Tiếng Nhật sơ cấp N5**: mỗi chương có từ vựng chia theo phần A/B/C/D, mẫu ngữ pháp kèm giải thích + câu ví dụ, chữ Hán kèm âm On/Kun và từ ví dụ. Có tiến độ từng chương, học thẻ, luyện tập và đề kiểm tra riêng cho chương |
+| **Trang chủ** | Thẻ "chương đang học" để vào thẳng bài trên lớp, đếm ngược ngày thi, chuỗi ngày học, mục tiêu ngày, mức sẵn sàng thi (ước tính điểm nhóm A), heatmap 30 ngày, lộ trình gợi ý |
 | **Ôn tập SRS** | Hàng đợi thẻ đến hạn theo thuật toán giãn cách (SM-2 rút gọn), chấm 4 mức Lại/Khó/Tốt/Dễ |
-| **Flashcard** | 5 bộ thẻ (kanji · từ vựng · ngữ pháp · kana · lượng từ), lọc theo chủ đề, chỉ thẻ chưa học / đang học / đến hạn / 80 kanji cốt lõi / chỉ động từ |
-| **Luyện tập** | 21 dạng câu hỏi: nghĩa kanji, âm Hán Việt, cách đọc, chính tả (表記), nghĩa từ, trợ từ, mẫu ngữ pháp, **chia động từ**, kana, lượng từ, số đếm. Có chế độ gõ chữ (nhận cả kana lẫn romaji) |
+| **Flashcard** | 5 bộ thẻ (kanji · từ vựng · ngữ pháp · kana · lượng từ), **lọc theo chương**, chỉ thẻ chưa học / đang học / đến hạn / 80 kanji cốt lõi / chỉ động từ |
+| **Luyện tập** | 26 dạng câu hỏi: nghĩa kanji, âm Hán Việt, cách đọc, chính tả (表記), nghĩa từ, trợ từ, mẫu ngữ pháp, **chia động từ**, kana, lượng từ, số đếm. Có chế độ gõ chữ (nhận cả kana lẫn romaji) |
 | **Bảng chữ cái** | Hiragana + katakana đầy đủ (gojuon/dakuon/youon/gairaigo), ẩn romaji để tự kiểm tra, luyện gõ, và **đề thi thử kana** (20/40/60/80 câu, chọn phạm vi 1 hoặc cả 2 bảng, có bấm giờ) |
-| **Ngữ pháp** | 94 mẫu chia 12 nhóm, ví dụ có kana + bản dịch, phát âm, kiểm tra theo nhóm |
+| **Ngữ pháp** | 127 mẫu theo 14 chương, kèm giải thích và câu ví dụ lấy từ sách, phát âm, kiểm tra theo chương |
 | **Tra cứu** | Tìm theo kanji/kana/romaji/nghĩa tiếng Việt — gõ **không dấu** cũng ra (`nuoc` → nước), katakana/hiragana như nhau; an toàn với bộ gõ Telex và bàn phím kana trên iOS; phím `/` mở tìm kiếm nhanh |
-| **Thi thử** | **Đề bảng chữ cái** (trộn nhận mặt chữ · viết theo romaji · chữ dễ nhầm · quy tắc trường âm/っ/âm ghép · từ katakana, chấm theo %, mốc đạt 90%). Đề đầy đủ 3 phần (文字・語彙 25′ · 文法・読解 50′ · 聴解 30′), tính giờ từng phần, chấm theo nhóm A (120đ, liệt 38) và B (60đ, liệt 19), tổng đỗ ≥ 80. Có đề lẻ từng phần và mini test 15′ |
+| **Thi thử** | **Đề kiểm tra chương** (25 câu trộn từ vựng – kanji – ngữ pháp của đúng chương đó, chấm theo %). **Đề bảng chữ cái** (trộn nhận mặt chữ · viết theo romaji · chữ dễ nhầm · quy tắc trường âm/っ/âm ghép · từ katakana, chấm theo %, mốc đạt 90%). Đề đầy đủ 3 phần (文字・語彙 25′ · 文法・読解 50′ · 聴解 30′), tính giờ từng phần, chấm theo nhóm A (120đ, liệt 38) và B (60đ, liệt 19), tổng đỗ ≥ 80. Có đề lẻ từng phần và mini test 15′ |
 | **Thống kê** | Biểu đồ hoạt động 14 ngày, phân bố trình độ thẻ, độ chính xác theo bộ, lịch sử điểm thi thử, 15 mục hay sai nhất |
 | **Cài đặt** | Sáng/tối, ẩn romaji, tự động phát âm, tốc độ đọc, mục tiêu ngày, ngày thi, xuất/nhập tiến độ `.json`, xoá dữ liệu |
 
@@ -48,7 +49,9 @@ Câu trả lời sai được tự động đẩy vào hàng đợi SRS để g�
 index.html
 manifest.webmanifest   cấu hình cài như app (PWA) + icons/
 css/style.css          giao diện (2 theme, responsive, bottom-nav trên mobile)
-data/n5-data.js        dữ liệu N5 gốc (102 kanji · 549 từ · 94 ngữ pháp · kana · lượng từ)
+data/n5-gungun.js      dữ liệu trích từ giáo trình GUNGUN N5 (14 chương · 965 từ · 161 kanji · 127 mẫu ngữ pháp · 139 bảng chia động từ)
+data/n5-kana.js        bảng hiragana/katakana, lượng từ, cấu trúc kỳ thi JLPT
+data/n5-data.js        bộ dữ liệu N5 tổng hợp ban đầu — không còn nạp vào web, chỉ dùng làm nguồn nghĩa tiếng Việt khi dựng lại dữ liệu
 data/n5-extra.js       8 đoạn đọc hiểu + 24 bài nghe + 18 câu quy tắc đọc kana (biên soạn thêm)
 js/core.js             lưu trữ, SRS, kana⇄romaji, TTS, helper UI
 js/quiz.js             bộ sinh câu hỏi + engine luyện tập
@@ -56,6 +59,18 @@ js/views-study.js      trang chủ, SRS, flashcard, quiz, kana, ngữ pháp, tra
 js/views-exam.js       thi thử, thống kê, cài đặt
 js/app.js              router hash, phím tắt, khung app
 ```
+
+## Nguồn dữ liệu
+
+Từ vựng, chữ Hán và ngữ pháp được trích tự động từ 14 file PDF của bộ **GUNGUN JOUTATSU! Tiếng Nhật sơ cấp N5 (bản VIP 260829)** — đọc theo toạ độ từng ô trong bảng của sách nên giữ đúng thứ tự chương, phần A/B/C/D và số trang.
+
+Những phần được bổ sung ngoài sách, đã ghi rõ để bạn biết:
+- **Nghĩa tiếng Việt của chữ Hán**: sách chỉ cho âm Hán Việt + từ ví dụ. 95 chữ lấy nghĩa từ bộ dữ liệu N5 tổng hợp, 66 chữ còn lại do mình bổ sung.
+- **Bảng chia động từ** (ます・từ điển・て・た・ない): sinh tự động theo quy tắc nhóm I/II/III như sách dạy ở chương 8, có xử lý ngoại lệ 行く・来る・する・あります.
+- **Romaji**: chuyển tự động từ kana.
+- **Bảng chữ cái, đọc hiểu, nghe hiểu, đề thi JLPT**: giữ nguyên từ bản trước.
+
+Khoảng 3% mục có cách đọc chưa chuẩn (chủ yếu ở các bảng số đếm in 2 cột) — gặp chỗ nào sai bạn cứ báo để mình sửa.
 
 ## Lưu ý
 

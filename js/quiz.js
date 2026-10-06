@@ -53,6 +53,7 @@ function Q(o) { return Object.assign({ type: 'choice', kind: 'q' }, o); }
 const PARTICLES = ['は', 'が', 'を', 'に', 'へ', 'で', 'と', 'も', 'か', 'ね', 'よ', 'の', 'から', 'まで', 'より'];
 const FORM_LABEL = {
   masu: 'thể ます (lịch sự)',
+  dict: 'thể từ điển (V る)',
   masu_nai: 'thể ません (phủ định lịch sự)',
   te: 'thể て',
   ta: 'thể た (quá khứ ngắn)',
@@ -152,7 +153,7 @@ const GEN = {
     deck: 'vocab', group: 'vocab', name: 'Từ → nghĩa',
     src: () => DATA.vocab,
     make(v) {
-      const same = DATA.vocab.filter(x => x.topic === v.topic);
+      const same = DATA.vocab.filter(x => x.ch === v.ch && x.id !== v.id);
       const o = opts(v.meaning_vi, fromList(same.length > 6 ? same : DATA.vocab, x => x.meaning_vi));
       if (!o) return null;
       return Q({
@@ -230,54 +231,80 @@ const GEN = {
   /* ===== NGỮ PHÁP ===== */
   grammar_meaning: {
     deck: 'grammar', group: 'grammar', name: 'Mẫu câu → ý nghĩa',
-    src: () => DATA.grammar,
+    src: () => DATA.grammar.filter(g => g.meaning_vi),
     make(g) {
-      const same = DATA.grammar.filter(x => x.category === g.category && x.id !== g.id);
-      const o = opts(g.meaning_vi, fromList(same.length > 4 ? same : DATA.grammar, x => x.meaning_vi));
+      const same = DATA.grammar.filter(x => x.ch === g.ch && x.id !== g.id && x.meaning_vi);
+      const o = opts(g.meaning_vi, fromList(same.length > 4 ? same : DATA.grammar.filter(x => x.meaning_vi), x => x.meaning_vi));
       if (!o) return null;
       return Q({
         kind: 'grammar_meaning', id: g.id, label: 'Mẫu ngữ pháp này nghĩa là gì?',
         prompt: g.pattern, promptCls: 'sentence',
         options: o.list, answer: o.idx,
-        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi)}<br><span class="tiny dim">Cấu trúc: ${esc(g.formation)}</span><br>
-          <span class="jp">${esc(g.example.jp)}</span> <span class="tiny dim">${esc(g.example.vi)}</span>`
+        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi)}<br>
+          <span class="tiny dim">Chương ${g.ch}${g.part ? ' · phần ' + esc(g.part) : ''}</span>
+          ${(g.examples || [])[0] ? `<br><span class="jp">${esc(g.examples[0])}</span>` : ''}`
       });
     }
   },
 
   grammar_usage: {
     deck: 'grammar', group: 'grammar', name: 'Câu ví dụ → mẫu ngữ pháp',
-    src: () => DATA.grammar.filter(g => g.example && g.example.jp),
+    src: () => DATA.grammar.filter(g => (g.examples || []).length),
     make(g) {
-      const same = DATA.grammar.filter(x => x.category === g.category && x.id !== g.id);
+      const same = DATA.grammar.filter(x => x.ch === g.ch && x.id !== g.id);
       const o = opts(g.pattern, fromList(same.length > 4 ? same : DATA.grammar, x => x.pattern));
       if (!o) return null;
+      const ex = pick(g.examples);
       return Q({
         kind: 'grammar_usage', id: g.id, label: 'Câu này dùng mẫu ngữ pháp nào?',
-        prompt: g.example.jp, promptCls: 'sentence', speak: g.example.jp, sub: g.example.vi,
+        prompt: ex, promptCls: 'sentence', speak: ex, sub: g.meaning_vi || '',
         options: o.list, answer: o.idx, optJp: true,
-        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi)} · <span class="tiny dim">${esc(g.formation)}</span>`
+        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi || '')}<br>
+          <span class="tiny dim">Chương ${g.ch}${g.part ? ' · phần ' + esc(g.part) : ''}</span>`
       });
     }
   },
 
+  grammar_explain: {
+    deck: 'grammar', group: 'grammar', name: 'Giải thích → mẫu câu',
+    src: () => DATA.grammar.filter(g => (g.explain || []).length && g.explain[0].length > 25),
+    make(g) {
+      const same = DATA.grammar.filter(x => x.ch === g.ch && x.id !== g.id);
+      const o = opts(g.pattern, fromList(same.length > 4 ? same : DATA.grammar, x => x.pattern));
+      if (!o) return null;
+      return Q({
+        kind: 'grammar_explain', id: g.id, label: 'Giải thích này nói về mẫu nào?',
+        prompt: g.explain[0].slice(0, 160), promptCls: 'text',
+        options: o.list, answer: o.idx, optJp: true,
+        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi || '')}`
+      });
+    }
+  },
+
+  /* Khoét trợ từ trong chính câu ví dụ của giáo trình */
   particle: {
     deck: 'grammar', group: 'grammar', name: 'Điền trợ từ',
-    src: () => DATA.grammar.filter(g => g.category === 'tro-tu' && PARTICLES.includes(g.pattern.replace(/\s*\(.*\)\s*/, '')) && g.example && g.example.jp.includes(g.pattern.replace(/\s*\(.*\)\s*/, ''))),
-    make(g) {
-      const p = g.pattern.replace(/\s*\(.*\)\s*/, '');
-      const jp = g.example.jp;
-      let at = jp.indexOf(p);
-      if (at <= 0) at = jp.indexOf(p, 1);
-      if (at < 0) return null;
-      const masked = esc(jp.slice(0, at)) + '<span class="q-blank">＿</span>' + esc(jp.slice(at + p.length));
+    src: () => {
+      const out = [];
+      DATA.grammar.forEach(g => (g.examples || []).forEach(ex => {
+        PARTICLES.forEach(p => {
+          const at = ex.indexOf(p, 1);
+          if (at > 0 && at < ex.length - 1 && !'。、'.includes(ex[at - 1])) out.push({ g, ex, p, at });
+        });
+      }));
+      return out;
+    },
+    make(it) {
+      const { g, ex, p, at } = it;
+      const masked = esc(ex.slice(0, at)) + '<span class="q-blank">＿</span>' + esc(ex.slice(at + p.length));
       const o = opts(p, () => pick(PARTICLES));
       if (!o) return null;
       return Q({
         kind: 'particle', id: g.id, label: 'Điền trợ từ thích hợp',
-        promptHTML: masked, promptCls: 'sentence', sub: g.example.vi, speak: jp,
+        promptHTML: masked, promptCls: 'sentence', sub: g.meaning_vi || '', speak: ex,
         options: o.list, answer: o.idx, optJp: true,
-        explain: `Trợ từ <b>${esc(p)}</b>: ${esc(g.meaning_vi)}<br><span class="jp">${esc(jp)}</span>`
+        explain: `Trợ từ <b>${esc(p)}</b><br><span class="jp">${esc(ex)}</span><br>
+          <span class="tiny dim">Mẫu: ${esc(g.pattern)} — chương ${g.ch}</span>`
       });
     }
   },
@@ -498,7 +525,7 @@ const GEN = {
 const GROUPS = {
   kanji:   { label: 'Kanji',        icon: '漢', kinds: ['kanji_meaning', 'meaning_kanji', 'kanji_hanviet', 'kanji_reading'] },
   vocab:   { label: 'Từ vựng',      icon: '語', kinds: ['vocab_meaning', 'meaning_vocab', 'vocab_reading', 'orthography'] },
-  grammar: { label: 'Ngữ pháp',     icon: '文', kinds: ['grammar_meaning', 'grammar_usage', 'particle'] },
+  grammar: { label: 'Ngữ pháp',     icon: '文', kinds: ['grammar_meaning', 'grammar_usage', 'grammar_explain', 'particle'] },
   conj:    { label: 'Chia động từ', icon: '動', kinds: ['conjugation', 'conjugation_type'] },
   kana:    { label: 'Kana',         icon: 'あ', kinds: ['kana_romaji', 'romaji_kana', 'kana_confuse', 'kana_rule', 'kata_word', 'kata_spell', 'kana_type'] },
   counter: { label: 'Lượng từ & số',icon: '個', kinds: ['counter_use', 'counter_pick', 'counter_read', 'number_read'] }

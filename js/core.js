@@ -4,7 +4,8 @@
 (function (global) {
 'use strict';
 
-const RAW = global.N5_DATA || {};
+const RAW = global.N5_GUNGUN || {};   /* giáo trình GUNGUN N5 — 14 chương */
+const BASE = global.N5_KANA || {};    /* bảng chữ cái, lượng từ, cấu trúc kỳ thi */
 
 /* ---------------- Utils ---------------- */
 const $  = (sel, root) => (root || document).querySelector(sel);
@@ -110,17 +111,33 @@ function answerMatches(input, accepted) {
 /* ---------------- Dataset ---------------- */
 const DATA = {
   meta: RAW.meta || {},
-  exam: RAW.exam || {},
-  cat: RAW.categories || { kanji: {}, grammar: {}, vocab_topic: {}, pos: {} },
+  exam: BASE.exam || {},
+  chapters: RAW.chapters || [],
   kanji: RAW.kanji || [],
   vocab: RAW.vocabulary || [],
   grammar: RAW.grammar || [],
-  counters: RAW.counters || [],
-  numbers: RAW.numbers || [],
-  hiragana: (RAW.kana && RAW.kana.hiragana) || [],
-  katakana: (RAW.kana && RAW.kana.katakana) || [],
-  kanaNotes: (RAW.kana && RAW.kana.notes) || []
+  counters: BASE.counters || [],
+  numbers: BASE.numbers || [],
+  hiragana: (BASE.kana && BASE.kana.hiragana) || [],
+  katakana: (BASE.kana && BASE.kana.katakana) || [],
+  kanaNotes: (BASE.kana && BASE.kana.notes) || []
 };
+
+/* Nhãn chương + từ loại, dùng cho bộ lọc */
+DATA.cat = { chapter: {}, pos: {} };
+DATA.chapters.forEach(c => {
+  DATA.cat.chapter[c.no] = 'Chương ' + c.no + (c.title_jp ? ' · ' + c.title_jp : '');
+});
+DATA.vocab.forEach(v => { if (v.pos) DATA.cat.pos[v.pos] = v.pos_vi || v.pos; });
+DATA.chapterOf = it => (it && it.ch) || null;
+DATA.ofChapter = no => ({
+  kanji: DATA.kanji.filter(k => k.ch === no),
+  vocab: DATA.vocab.filter(v => v.ch === no),
+  grammar: DATA.grammar.filter(g => g.ch === no)
+});
+DATA.chapterItems = no => [].concat(DATA.ofChapter(no).vocab, DATA.ofChapter(no).kanji, DATA.ofChapter(no).grammar);
+DATA.upto = no => [].concat(
+  DATA.vocab.filter(v => v.ch <= no), DATA.kanji.filter(k => k.ch <= no), DATA.grammar.filter(g => g.ch <= no));
 DATA.verbs = DATA.vocab.filter(v => v.conjugation);
 DATA.byId = {};
 DATA.kanji.forEach(k => DATA.byId[k.id] = k);
@@ -153,7 +170,7 @@ function itemFace(it) {
   if (it.char && it.hanviet) return { front: it.char, reading: [].concat(it.onyomi || [], it.kunyomi || []).join('・'), meaning: it.meaning_vi };
   if (it.char) return { front: it.char, reading: it.romaji, meaning: it.romaji };
   if (it.word) return { front: it.word, reading: it.kana, meaning: it.meaning_vi };
-  if (it.pattern) return { front: it.pattern, reading: it.formation, meaning: it.meaning_vi };
+  if (it.pattern) return { front: it.pattern, reading: 'Chương ' + it.ch + (it.part ? ' · phần ' + it.part : ''), meaning: it.meaning_vi || (it.explain || [])[0] || '' };
   if (it.counter) return { front: it.counter, reading: (it.readings || []).join('・'), meaning: it.usage_vi };
   return { front: '?', reading: '', meaning: '' };
 }
@@ -168,6 +185,7 @@ const DEFAULTS = {
     ttsRate: 0.9,
     dailyGoal: 30,
     examDate: '',
+    chapter: 1,
     quizLen: 15,
     hideRomajiKana: false
   },

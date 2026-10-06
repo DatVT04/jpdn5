@@ -169,6 +169,21 @@ const EXAM_MODES = {
     label: 'Chỉ 聴解', desc: '14 câu · 30 phút · dùng giọng đọc máy',
     build: () => [{ key: 'choukai', name: '聴解', vi: 'Nghe hiểu', minutes: 30, group: 'B', questions: listeningBlock(8, 6) }]
   },
+  chapter: {
+    label: 'Đề kiểm tra chương', desc: 'Từ vựng · chữ Hán · ngữ pháp của một chương trong giáo trình',
+    scoring: 'percent', pass: 80,
+    build: (o) => {
+      const no = Math.min(14, Math.max(1, Number(o && o.ch) || N.settings().chapter || 1));
+      const items = shuffle(DATA.chapterItems(no));
+      /* đề thi chỉ dùng câu trắc nghiệm (câu gõ chữ dành cho phần luyện tập) */
+      const qs = QUIZ.buildSet({ items, count: Math.min(32, items.length) })
+        .filter(q => q.type !== 'input').slice(0, 25).map(wrapQ);
+      const ch = DATA.chapters.find(c => c.no === no) || { no };
+      return [{ key: 'ch' + no, name: '確認テスト · 第' + no + '課', vi: ch.title_jp || ('Chương ' + no),
+                minutes: 15, group: 'A', questions: qs }];
+    }
+  },
+
   kana: {
     label: 'Đề bảng chữ cái', desc: '40 câu · 15 phút · hiragana + katakana + quy tắc đọc',
     scoring: 'percent', pass: 90,
@@ -204,7 +219,7 @@ V.exam = function (root, params) {
       <div class="grid g2">
         ${Object.keys(EXAM_MODES).map(k => `
           <div class="mod-card" data-mode="${k}">
-            <span class="em">${k === 'full' ? '🏯' : k === 'choukai' ? '🎧' : k === 'quick' ? '⚡' : k === 'kana' ? 'あ' : '📄'}</span>
+            <span class="em">${k === 'full' ? '🏯' : k === 'choukai' ? '🎧' : k === 'quick' ? '⚡' : k === 'kana' ? 'あ' : k === 'chapter' ? '📚' : '📄'}</span>
             <h3>${esc(EXAM_MODES[k].label)}</h3>
             <p>${esc(EXAM_MODES[k].desc)}</p>
           </div>`).join('')}
@@ -402,7 +417,8 @@ V.exam = function (root, params) {
         const st = N.state();
         st.kanaExams = st.kanaExams || [];
         st.kanaExams.push({
-          date: new Date().toLocaleString('vi-VN'), scope: (opt && opt.scope) || 'both',
+          date: new Date().toLocaleString('vi-VN'), mode,
+          scope: mode === 'chapter' ? ('C' + ((opt && opt.ch) || N.settings().chapter || 1)) : ((opt && opt.scope) || 'both'),
           correct, totalQ, acc: accuracy, ts: Date.now()
         });
       } else {
@@ -415,8 +431,10 @@ V.exam = function (root, params) {
       N.save();
       QUIZ.SFX.done();
 
-      const scopeLabel = SCOPE_VI[(opt && opt.scope) || 'both'];
-      const kanaHist = (N.state().kanaExams || []).slice().reverse().slice(0, 6);
+      const scopeLabel = mode === 'chapter'
+        ? ('chương ' + ((opt && opt.ch) || N.settings().chapter || 1))
+        : SCOPE_VI[(opt && opt.scope) || 'both'];
+      const kanaHist = (N.state().kanaExams || []).filter(h => (h.mode || 'kana') === mode).reverse().slice(0, 6);
 
       root.innerHTML = percentMode ? `
         <div class="verdict-big ${pass ? 'pass' : 'fail'}">
@@ -434,7 +452,7 @@ V.exam = function (root, params) {
         <div class="card" style="margin-top:14px">
           <h3>Nhận xét</h3>
           <p class="muted" style="margin:8px 0 0">${
-            accuracy >= 95 ? 'Xuất sắc — bạn đã thuộc chắc phần này. Tối nay cứ tự tin làm bài.'
+            accuracy >= 95 ? 'Xuất sắc — phần này bạn đã nắm chắc, có thể sang chương tiếp theo.'
             : accuracy >= 90 ? 'Rất tốt. Chỉ còn vài chữ lẻ, xem lại danh sách sai bên dưới là đủ.'
             : accuracy >= 75 ? 'Gần ổn. Ôn ngay các chữ sai bên dưới rồi làm lại một đề nữa.'
             : 'Còn hổng khá nhiều. Học lại bằng flashcard theo từng hàng (あ→か→さ…) rồi quay lại thi.'}</p>
@@ -450,7 +468,7 @@ V.exam = function (root, params) {
           <button class="btn ghost" id="exHome">Về trang thi thử</button>
         </div>
         ${kanaHist.length > 1 ? `
-          <div class="section-head"><h2>Lịch sử đề kana</h2></div>
+          <div class="section-head"><h2>Lịch sử ${mode === 'chapter' ? 'đề chương' : 'đề kana'}</h2></div>
           <div class="list">
             ${kanaHist.map(h => `<div class="item">
               <span class="lead sm">${h.acc >= 90 ? '✅' : h.acc >= 75 ? '⚠️' : '❌'}</span>
@@ -531,7 +549,8 @@ V.exam = function (root, params) {
   if (params.mode && EXAM_MODES[params.mode]) {
     startExam(params.mode, params.timed !== '0', {
       scope: params.scope || 'both',
-      n: Number(params.n) || 40
+      n: Number(params.n) || 40,
+      ch: Number(params.ch) || N.settings().chapter || 1
     });
     return;
   }
@@ -669,6 +688,8 @@ V.settings = function (root) {
             <option value="dark" ${st.theme === 'dark' ? 'selected' : ''}>Tối (Ai-iro)</option>
             <option value="light" ${st.theme === 'light' ? 'selected' : ''}>Sáng (Washi)</option>
           </select></label>
+        <label class="field"><span>Chương đang học (theo lớp)</span>
+          <select id="setChapter">${DATA.chapters.map(c => `<option value="${c.no}" ${(st.chapter || 1) === c.no ? 'selected' : ''}>Chương ${c.no} — ${esc(c.title_jp || '')}</option>`).join('')}</select></label>
         <label class="field"><span>Mục tiêu mỗi ngày</span>
           <select id="setGoal">${[10, 20, 30, 50, 80, 120].map(n => `<option value="${n}" ${n === st.dailyGoal ? 'selected' : ''}>${n} lượt/ngày</option>`).join('')}</select></label>
       </div>
@@ -718,13 +739,17 @@ V.settings = function (root) {
     </div>
 
     <p class="tiny dim center" style="margin-top:18px">
-      ${esc(DATA.meta.title || 'JLPT N5')} · dữ liệu v${esc(DATA.meta.version || '1.0.0')} ·
+      ${esc(DATA.meta.title || 'JLPT N5')} ·
       ${DATA.kanji.length} kanji · ${DATA.vocab.length} từ · ${DATA.grammar.length} ngữ pháp<br>
       ${esc(DATA.meta.note || '')}
     </p>`;
 
   root.querySelector('#setTheme').onchange = e => { N.setSetting('theme', e.target.value); App.applyTheme(); };
   root.querySelector('#setGoal').onchange = e => { N.setSetting('dailyGoal', Number(e.target.value)); App.refreshBadges(); };
+  root.querySelector('#setChapter').onchange = e => {
+    N.setSetting('chapter', Number(e.target.value));
+    N.toast('Đã chuyển sang chương ' + e.target.value + ' 📚', 'ok');
+  };
   root.querySelector('#setRomaji').onchange = e => N.setSetting('showRomaji', e.target.checked);
   root.querySelector('#setAuto').onchange = e => N.setSetting('autoSpeak', e.target.checked);
   root.querySelector('#setExam').onchange = e => { N.setSetting('examDate', e.target.value); N.toast('Đã lưu ngày thi', 'ok'); };
