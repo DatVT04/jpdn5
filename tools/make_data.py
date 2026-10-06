@@ -188,33 +188,30 @@ def conjugate(word, kana, pos):
 
 # ------------------------------------------------------------------ tiêu đề chương
 def chapter_titles():
-    """Tiêu đề chương = dòng chữ Nhật lớn nhất ở trang mở đầu (ghép các mảnh cùng dòng)."""
+    """Tiêu đề chương ở trang mở đầu, kèm furigana."""
+    from build_data import rich_line
     titles = {}
     for f in glob.glob(BOOK + r'\*.pdf'):
         m = re.match(r'(\d+)\.CHƯƠNG', os.path.basename(f))
         if not m:
             continue
         doc = fitz.open(f)
-        sp = []
-        for b in doc[0].get_text('dict')['blocks']:
+        page = doc[0]
+        bands = {}
+        for b in page.get_text('dict')['blocks']:
             if b['type'] != 0:
                 continue
             for l in b['lines']:
-                for s in l['spans']:
-                    txt = s['text'].strip()
-                    if txt and s['size'] > 13 and re.search(r'[\u3040-\u30ff\u4e00-\u9faf]', txt):
-                        sp.append({'y': s['bbox'][1], 'x': s['bbox'][0], 'sz': s['size'], 't': txt})
-        bands = {}
-        for s in sp:
-            key = round(s['y'] / 10)
-            bands.setdefault(key, []).append(s)
+                for sp in l['spans']:
+                    txt = sp['text'].strip()
+                    if txt and sp['size'] > 13 and re.search(r'[\u3040-\u30ff\u4e00-\u9faf]', txt):
+                        bands.setdefault(round(sp['bbox'][1] / 10), []).append(sp)
         best = ''
         for key, group in bands.items():
-            if len(group) < 2 and len(group[0]['t']) < 4:
-                continue
-            txt = ''.join(z['t'] for z in sorted(group, key=lambda z: z['x']))
-            txt = re.sub(r'[\s　]', '', txt)
-            if len(txt) > len(best):
+            y = min(sp['bbox'][1] for sp in group)
+            txt = rich_line(page, y, -1e9, 1e9, 13.0, band=19)
+            txt = re.sub(r'[ \u3000]', '', txt)
+            if len(re.sub(r'《[^》]*》', '', txt)) > len(re.sub(r'《[^》]*》', '', best)):
                 best = txt
         titles[int(m.group(1))] = best
         doc.close()

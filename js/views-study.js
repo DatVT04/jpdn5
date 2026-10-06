@@ -58,13 +58,13 @@ function detailHTML(it) {
         </div>` : ''}`;
   } else if (deck === 'grammar') {
     body = `
-      <div class="center"><span class="jp" style="font-size:32px;font-weight:700">${esc(it.pattern)}</span></div>
+      <div class="center"><span class="jp" style="font-size:32px;font-weight:700">${N.jpHTML(it.pattern)}</span></div>
       <div class="center muted" style="margin-top:6px">${esc(it.meaning_vi)}</div>
       ${(it.explain || []).length ? `<ul class="muted" style="margin:14px 0 0;padding-left:20px;line-height:1.75">
-        ${it.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        ${it.explain.map(x => `<li>${N.jpHTML(x)}</li>`).join('')}</ul>` : ''}
       ${(it.examples || []).length ? `<h3 style="margin-top:16px">Câu ví dụ</h3>
         ${it.examples.map(x => `<div class="ex" style="margin-top:8px">
-          <div class="jp">${esc(x)}</div>
+          <div class="jp">${N.jpHTML(x)}</div>
           <div style="margin-top:6px">${N.speakBtn(x)}</div></div>`).join('')}` : ''}
       <div class="tiny dim" style="margin-top:12px">
         <a href="#/chapter?no=${it.ch}" class="tag" style="text-decoration:none">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</a>
@@ -176,7 +176,7 @@ function startCards(root, items, opt) {
       : deck === 'grammar' ? `
         <div class="fc-mean">${esc(it.meaning_vi || (it.explain || [])[0] || '')}</div>
         <div class="fc-kana">Chương ${it.ch}${it.part ? ' · phần ' + esc(it.part) : ''}</div>
-        ${(it.examples || [])[0] ? `<div class="fc-ex">${esc(it.examples[0])}</div>` : ''}`
+        ${(it.examples || [])[0] ? `<div class="fc-ex">${N.jpHTML(it.examples[0])}</div>` : ''}`
       : deck === 'counter' ? `
         <div class="fc-mean">${esc(it.usage_vi)}</div>
         <div class="fc-kana">${esc((it.readings || []).join('・'))}</div>`
@@ -187,13 +187,13 @@ function startCards(root, items, opt) {
       <div class="fc-face front">
         <div class="fc-corner"><span>${esc((DECKS[deck] || {}).label || '')}</span>
           <span class="mastery-dot" data-m="${mast}"></span></div>
-        <div class="fc-main ${String(f.front).length > 6 ? 'small' : ''}">${esc(f.front)}</div>
+        <div class="fc-main ${String(N.rubyPlain(f.front)).length > 6 ? 'small' : ''}">${N.jpHTML(f.front)}</div>
         ${deck === 'grammar' ? `<div class="fc-romaji">Chương ${it.ch}${it.part ? ' · ' + esc(it.part) : ''}</div>` : ''}
         <div class="fc-hint">Nhấn để xem đáp án</div>
       </div>
       <div class="fc-face back">
         <div class="fc-corner"><span>${esc((DECKS[deck] || {}).label || '')}</span>${N.speakBtn(f.front)}</div>
-        <div class="fc-main small">${esc(f.front)}</div>
+        <div class="fc-main small">${N.jpHTML(f.front)}</div>
         ${back}
       </div>`;
     N.bindSpeak(card);
@@ -428,7 +428,7 @@ V.review = function (root) {
           <div class="spread">
             <div style="min-width:0">
               <span class="tiny dim">ĐANG HỌC THEO GIÁO TRÌNH</span>
-              <h2 style="margin:4px 0 2px">Chương ${cn} <span class="jp">${esc(cc.title_jp || '')}</span></h2>
+              <h2 style="margin:4px 0 2px">Chương ${cn} <span class="jp">${N.jpHTML(cc.title_jp || '')}</span></h2>
               <p class="tiny dim" style="margin:0">${cc.counts.vocab} từ · ${cc.counts.kanji} kanji · ${cc.counts.grammar} mẫu câu</p>
             </div>
             <span class="btn sm primary">Tiếp tục →</span>
@@ -529,7 +529,7 @@ V.flashcard = function (root, params) {
           const f = itemFace(it), m = SRS.mastery(it.id);
           return (deck === 'kanji' || deck === 'kana')
             ? `<div class="kanji-tile" data-id="${it.id}"><b>${esc(f.front)}</b><span>${esc(f.meaning)}</span></div>`
-            : `<div class="item" data-id="${it.id}"><span class="lead ${String(f.front).length > 4 ? 'sm' : ''}">${esc(f.front)}</span>
+            : `<div class="item" data-id="${it.id}"><span class="lead ${String(N.rubyPlain(f.front)).length > 4 ? 'sm' : ''}">${N.jpHTML(f.front)}</span>
                  <div class="body"><div class="t">${esc(f.meaning)}</div><div class="s">${esc(f.reading)}</div></div>
                  <div class="tail"><span class="mastery-dot" data-m="${m}"></span></div></div>`;
         }).join('')}
@@ -847,14 +847,14 @@ V.grammar = function (root, params) {
       <div class="gr-item" data-id="${g.id}">
         <div class="gr-head">
           <span class="mastery-dot" data-m="${m}"></span>
-          <span class="p">${esc(g.pattern)}</span>
+          <span class="p">${N.jpHTML(g.pattern)}</span>
           <span class="m">${esc(g.meaning_vi || (g.explain || [])[0] || '')}</span>
           <span class="caret">▾</span>
         </div>
         <div class="gr-body">
-          ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.7">
-            ${g.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-          ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${esc(x)}</div>
+          ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.9">
+            ${g.explain.map(x => `<li>${N.jpHTML(x)}</li>`).join('')}</ul>` : ''}
+          ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${N.jpHTML(x)}</div>
             <div style="margin-top:6px">${N.speakBtn(x, 'sm')}</div></div>`).join('')}
           <div class="row" style="margin-top:12px">
             <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
@@ -956,7 +956,7 @@ V.browse = function (root, params) {
       : `<div class="list">${list.slice(0, 300).map(x => {
           const f = itemFace(x), m = SRS.mastery(x.id);
           return `<div class="item" data-id="${x.id}">
-            <span class="lead ${String(f.front).length > 4 ? 'sm' : ''}">${esc(f.front)}</span>
+            <span class="lead ${String(N.rubyPlain(f.front)).length > 4 ? 'sm' : ''}">${N.jpHTML(f.front)}</span>
             <div class="body"><div class="t">${esc(f.meaning)}</div><div class="s">${esc(f.reading)}</div></div>
             <div class="tail"><span class="mastery-dot" data-m="${m}"></span></div>
           </div>`;
@@ -989,7 +989,7 @@ V.chapters = function (root) {
           ${c.no === cur ? '<span class="tag core">đang học</span>' : ''}
           ${st.due ? `<span class="tag v3">${st.due} thẻ đến hạn</span>` : ''}
         </div>
-        <h3 class="jp">${esc(c.title_jp || 'Chương ' + c.no)}</h3>
+        <h3 class="jp">${N.jpHTML(c.title_jp || 'Chương ' + c.no)}</h3>
         <p>${c.counts.vocab} từ · ${c.counts.kanji} kanji · ${c.counts.grammar} mẫu câu</p>
         ${N.barHTML(st.pct, st.pct === 100 ? 'green' : '')}
         <p class="tiny dim" style="margin-top:6px">${st.learned}/${st.total} mục đã học · ${st.mastered} đã thuộc</p>
@@ -1026,7 +1026,7 @@ V.chapter = function (root, params) {
         const items = data.vocab.filter(v => v.part === p);
         const title = (ch.parts.find(x => x.letter === p) || {}).title_jp || '';
         return `
-          <div class="section-head sm"><h2>Phần ${esc(p)} ${title ? `<span class="jp tiny dim">${esc(title)}</span>` : ''}</h2>
+          <div class="section-head sm"><h2>Phần ${esc(p)} ${title ? `<span class="jp tiny dim">${N.jpHTML(title)}</span>` : ''}</h2>
             <span class="tiny dim">${items.length} từ</span></div>
           <div class="list">
             ${items.map(v => `
@@ -1045,14 +1045,14 @@ V.chapter = function (root, params) {
           <div class="gr-item" data-gid="${g.id}">
             <div class="gr-head">
               <span class="mastery-dot" data-m="${SRS.mastery(g.id)}"></span>
-              <span class="p">${esc(g.pattern)}</span>
+              <span class="p">${N.jpHTML(g.pattern)}</span>
               <span class="m">${esc(g.meaning_vi || '')}</span>
               <span class="caret">▾</span>
             </div>
             <div class="gr-body">
-              ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.7">
-                ${g.explain.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-              ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${esc(x)}</div>
+              ${(g.explain || []).length ? `<ul class="muted" style="margin:4px 0 12px;padding-left:20px;line-height:1.9">
+                ${g.explain.map(x => `<li>${N.jpHTML(x)}</li>`).join('')}</ul>` : ''}
+              ${(g.examples || []).map(x => `<div class="ex" style="margin-bottom:8px"><div class="jp">${N.jpHTML(x)}</div>
                 <div style="margin-top:6px">${N.speakBtn(x, 'sm')}</div></div>`).join('')}
               <div class="row" style="margin-top:10px">
                 <button class="btn sm" data-srs="${g.id}">+ Ôn mẫu này</button>
@@ -1085,9 +1085,9 @@ V.chapter = function (root, params) {
       </div>
 
       <div class="hero" style="padding:22px">
-        <h2 class="jp">${esc(ch.title_jp || '')}</h2>
+        <h2 class="jp">${N.jpHTML(ch.title_jp || '')}</h2>
         <div class="row" style="margin-top:10px">
-          ${(ch.parts || []).map(p => `<span class="tag">${esc(p.letter)} · <span class="jp">${esc(p.title_jp)}</span></span>`).join('')}
+          ${(ch.parts || []).map(p => `<span class="tag">${esc(p.letter)} · <span class="jp">${N.jpHTML(p.title_jp)}</span></span>`).join('')}
         </div>
         <div style="margin-top:14px">${N.barHTML(stat.pct, stat.pct === 100 ? 'green' : '')}</div>
         <p class="tiny" style="margin:8px 0 0;opacity:.85">${stat.learned}/${stat.total} mục đã học · ${stat.mastered} đã thuộc${stat.due ? ' · ' + stat.due + ' thẻ đến hạn' : ''}</p>

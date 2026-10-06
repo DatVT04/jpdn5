@@ -85,6 +85,79 @@ def page_kind(page):
     return 'other'
 
 
+
+# ----------------------------------------------------------------- FURIGANA
+_RAW_CACHE = {}
+
+
+def _raw(page):
+    key = (id(page.parent), page.number)
+    if key not in _RAW_CACHE:
+        _RAW_CACHE[key] = page.get_text('rawdict')
+    return _RAW_CACHE[key]
+
+
+def rich_line(page, y, x0=-1e9, x1=1e9, main_min=MAIN, band=17):
+    """Trả về chuỗi của một dòng, chữ Hán kèm furigana dạng 日本《にほん》."""
+    chars, rubies = [], []
+    for b in _raw(page)['blocks']:
+        if b['type'] != 0:
+            continue
+        for l in b['lines']:
+            for sp in l['spans']:
+                bx, by = sp['bbox'][0], sp['bbox'][1]
+                txt = ''.join(c['c'] for c in sp.get('chars', [])).strip()
+                if sp['size'] >= main_min and abs(by - y) < 8 and x0 <= bx <= x1:
+                    chars.extend(sp.get('chars', []))
+                elif sp['size'] < main_min and abs(by - y) < 9 and x0 <= bx <= x1 \
+                        and re.fullmatch(r'[0-9０-９]+', txt):
+                    chars.extend(sp.get('chars', []))      # chỉ số dưới N1, N2
+                elif sp['size'] < main_min and y - band < by < y - 1 and x0 <= bx <= x1:
+                    if txt and JP.search(txt):
+                        rubies.append({'x0': sp['bbox'][0], 'x1': sp['bbox'][2],
+                                       't': re.sub(r'[\s\u3000]', '', txt), 'sz': sp['size']})
+    if not chars:
+        return ''
+    chars.sort(key=lambda c: c['bbox'][0])
+    rubies.sort(key=lambda r: r['x0'])
+
+    # các mảnh furigana liền nhau là cùng một cách đọc (き + の + う → きのう)
+    merged = []
+    for r in rubies:
+        if merged and r['x0'] - merged[-1]['x1'] <= 1.8 * r.get('sz', 6):
+            merged[-1]['x1'] = max(merged[-1]['x1'], r['x1'])
+            merged[-1]['t'] += r['t']
+        else:
+            merged.append(dict(r))
+    rubies = merged
+
+    owner = [None] * len(chars)
+    for ri, r in enumerate(rubies):
+        for ci, c in enumerate(chars):
+            cx = (c['bbox'][0] + c['bbox'][2]) / 2
+            if r['x0'] - 2.5 <= cx <= r['x1'] + 2.5 and re.match(r'[\u4e00-\u9faf々]', c['c']):
+                owner[ci] = ri
+
+    out, i = [], 0
+    while i < len(chars):
+        o = owner[i]
+        if o is None:
+            out.append(chars[i]['c'])
+            i += 1
+            continue
+        j = i
+        while j < len(chars) and owner[j] == o:
+            j += 1
+        base = ''.join(chars[k]['c'] for k in range(i, j))
+        out.append(base + '《' + rubies[o]['t'] + '》')
+        i = j
+    return re.sub(r'[ \u3000]{2,}', ' ', ''.join(out)).strip()
+
+
+def plain(s):
+    return re.sub(r'《[^》]*》', '', s or '')
+
+
 # ----------------------------------------------------------------- MỤC LỤC
 def parse_toc():
     """Đọc mục lục: chương → phần A/B/C/D → mẫu ngữ pháp (kèm số trang) → nhóm chữ Hán."""
@@ -117,9 +190,10 @@ def parse_toc():
 
                 if letter:
                     cur_part = letter[0]['t'].strip()
-                    title = line_text([s for s in row if s['x'] >= 94 and s['x'] <= 440], TOC_MIN)
+                    rich = rich_line(page, row[0]['y'], 94, 440, TOC_MIN, band=11)
+                    title = rich or line_text([s for s in row if s['x'] >= 94 and s['x'] <= 440], TOC_MIN)
                     ch['parts'].append({'letter': cur_part,
-                                        'title_jp': clean_jp(title.lstrip('-–— ')),
+                                        'title_jp': re.sub(r'[ \u3000]', '', title.lstrip('-–— ')),
                                         'page': page_num})
                     continue
                 if not body:
@@ -285,6 +359,23 @@ def page_lines(page):
 LATIN = re.compile(r'[a-zàáâãèéêìíòóôõùúăđĩũơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹý]', re.I)
 
 
+
+def one_per_row(page, lines, main_min):
+    """Gom các mảnh cùng một dòng rồi dựng văn bản (kèm furigana) đúng một lần."""
+    rows = {}
+    for l in sorted(lines, key=lambda z: (z['y'], z['x'])):
+        key = next((k for k in rows if abs(k - l['y']) < 8), l['y'])
+        rows.setdefault(key, []).append(l)
+    out = []
+    for y in sorted(rows):
+        x0 = min(l['x'] for l in rows[y]) - 2
+        txt = rich_line(page, y, x0, 1e9, main_min)
+        if not txt:
+            txt = ' '.join(l['t'] for l in sorted(rows[y], key=lambda z: z['x']))
+        out.append(re.sub(r'\s+', ' ', txt).strip())
+    return [t for t in out if t]
+
+
 def extract_grammar(doc):
     """Mỗi mẫu câu = số thứ tự cỡ 13 ở lề trái + câu mẫu tiếng Nhật cùng dòng."""
     items = []
@@ -299,13 +390,12 @@ def extract_grammar(doc):
                     and 11.7 < l['sz'] < 14.6 and JP.search(l['t'])]
             if not pats:
                 continue
-            pats.sort(key=lambda l: (round(l['y'] / 8), l['x']))
-            pat = re.sub(r'\s+', ' ', ' '.join(l['t'] for l in pats)).strip()
+            pat = re.sub(r'\s+', ' ', ' '.join(one_per_row(page, pats, 11.5))).strip()
             # vế trả lời (→［ ...) nằm bên phải, cỡ nhỏ hơn
             cont = [l for l in ls if pats[0]['y'] - 6 < l['y'] < pats[0]['y'] + 45 and l['x'] > 250
                     and 9.5 < l['sz'] < 12 and JP.search(l['t'])]
             if cont:
-                pat += ' ' + ' / '.join(re.sub(r'\s+', ' ', c['t']).strip() for c in sorted(cont, key=lambda c: c['y']))
+                pat += ' ' + ' / '.join(one_per_row(page, cont, 9.5))
             y_end = marks[mi + 1]['y'] - 10 if mi + 1 < len(marks) else 9999
             seg = [l for l in ls if m['y'] - 5 < l['y'] < y_end]
             meaning = ''
@@ -322,13 +412,10 @@ def extract_grammar(doc):
             for l in sorted(seg, key=lambda l: l['y']):
                 t = re.sub(r'\s+', ' ', l['t']).strip()
                 if t.startswith('♦') or t.startswith('•'):
-                    # gom cả dòng xuống dòng của gạch đầu dòng
-                    full = ''.join(z['t'] for z in sorted(
-                        [z for z in seg if abs(z['y'] - l['y']) < 7 and z['sz'] >= 9], key=lambda z: z['x']))
+                    full = rich_line(page, l['y'], -1e9, 1e9, 9.0)
                     bullets.append(re.sub(r'\s+', ' ', full).lstrip('♦• ').strip())
                 elif t.startswith('例') and 'KozGoPro' in l['font']:
-                    full = ''.join(z['t'] for z in sorted(
-                        [z for z in seg if abs(z['y'] - l['y']) < 8 and z['sz'] >= 9.3], key=lambda z: z['x']))
+                    full = rich_line(page, l['y'], -1e9, 1e9, 9.3)
                     body = re.sub(r'^例\s*', '', re.sub(r'\s+', ' ', full)).strip()
                     for piece in re.split(r'(?<=。)\s{2,}|\s{3,}|(?<=。)(?=\d[．.])', body):
                         piece = re.sub(r'^\d+[．.]\s*', '', piece).strip()

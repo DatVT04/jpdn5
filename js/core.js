@@ -341,6 +341,7 @@ const TTS = {
     speechSynthesis.onvoiceschanged = pickVoice;
   },
   speak(text) {
+    text = rubyPlain(text);
     if (!text || !('speechSynthesis' in window)) return;
     try {
       speechSynthesis.cancel();
@@ -377,7 +378,7 @@ function openModal(html) {
 function closeModal() { const w = $('#modalWrap'); if (w) w.hidden = true; document.body.classList.remove('modal-open'); }
 
 function speakBtn(text, cls) {
-  return `<button class="btn ${cls || 'sm ghost'}" data-speak="${esc(text)}" title="Nghe phát âm">🔊</button>`;
+  return `<button class="btn ${cls || 'sm ghost'}" data-speak="${esc(rubyPlain(text))}" title="Nghe phát âm">🔊</button>`;
 }
 function bindSpeak(root) {
   $$('[data-speak]', root || document).forEach(b => {
@@ -386,6 +387,13 @@ function bindSpeak(root) {
     b.addEventListener('click', e => { e.stopPropagation(); TTS.speak(b.dataset.speak); });
   });
 }
+/* Chuỗi dạng 日本《にほん》 → <ruby>日本<rt>にほん</rt></ruby> */
+function jpHTML(s) {
+  return esc(String(s == null ? '' : s))
+    .replace(/([\u4e00-\u9faf々]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
+}
+function rubyPlain(s) { return String(s == null ? '' : s).replace(/《[^》]*》/g, ''); }
+
 function barHTML(p, cls) { return `<div class="bar ${cls || ''}"><i style="width:${clamp(p, 0, 100)}%"></i></div>`; }
 
 /* Chuẩn hoá chuỗi tìm kiếm: bỏ dấu tiếng Việt, katakana → hiragana, chữ thường.
@@ -428,7 +436,7 @@ global.N5 = {
   DATA, DECKS, deckOf, itemFace,
   state, settings, setSetting, save, load, resetAll,
   logDay, todayStats, logAnswer, SRS, TTS,
-  toast, openModal, closeModal, speakBtn, bindSpeak, barHTML,
+  toast, openModal, closeModal, speakBtn, bindSpeak, barHTML, jpHTML, rubyPlain,
   searchNorm, bindSearchInput, searchBarHTML,
   KEY, DEFAULTS
 };

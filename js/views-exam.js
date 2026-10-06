@@ -25,7 +25,7 @@ function genQ(kind, n, filter) {
     used.add(q.id + kind);
     out.push({
       label: q.label,
-      promptHTML: q.promptHTML || esc(q.prompt),
+      promptHTML: q.promptHTML || N.jpHTML(q.prompt),
       promptCls: q.promptCls || '',
       sub: q.sub || '',
       options: q.options, answer: q.answer, optJp: q.optJp,
@@ -84,7 +84,7 @@ function bigPrompt(q) {
 function wrapQ(q) {
   return {
     label: q.label,
-    promptHTML: q.promptHTML || esc(q.prompt),
+    promptHTML: q.promptHTML || N.jpHTML(q.prompt),
     promptCls: q.promptCls || '',
     sub: q.sub || '',
     options: q.options, answer: q.answer, optJp: q.optJp,
@@ -289,6 +289,7 @@ V.exam = function (root, params) {
 
       const paper = root.querySelector('#exPaper');
       let lastPassage = null;
+      sec.questions = sec.questions.filter(q => q && (q.options || []).length);
       paper.innerHTML = sec.questions.map((q, i) => {
         let head = '';
         if (q.passage && q.passage.id !== lastPassage) {
@@ -304,7 +305,7 @@ V.exam = function (root, params) {
             ${q.audio ? `<div style="margin:-6px 0 14px"><button class="btn sm" data-audio="${esc(q.audio)}">🔊 Nghe</button>
               <span class="tiny dim" style="margin-left:8px">có thể nghe lại nhiều lần</span></div>` : ''}
             <div class="exam-opts">
-              ${q.options.map((o, k) => `<div class="exam-opt" data-q="${i}" data-o="${k}"><span class="n">${k + 1}</span><span class="${q.optJp ? 'jp' : ''}">${esc(o)}</span></div>`).join('')}
+              ${q.options.map((o, k) => `<div class="exam-opt" data-q="${i}" data-o="${k}"><span class="n">${k + 1}</span><span class="${q.optJp ? 'jp' : ''}">${q.optJp ? N.jpHTML(o) : esc(o)}</span></div>`).join('')}
             </div>
           </div>`;
       }).join('');
@@ -524,7 +525,7 @@ V.exam = function (root, params) {
             <div class="body ${bigPrompt(q) ? 'big' : ''}">${q.promptHTML}</div>
             <div class="exam-opts">
               ${q.options.map((o, x) => `<div class="exam-opt ${x === q.answer ? 'ok' : (x === ua ? 'bad' : '')}">
-                <span class="n">${x + 1}</span><span class="${q.optJp ? 'jp' : ''}">${esc(o)}</span></div>`).join('')}
+                <span class="n">${x + 1}</span><span class="${q.optJp ? 'jp' : ''}">${q.optJp ? N.jpHTML(o) : esc(o)}</span></div>`).join('')}
             </div>
             <div class="tiny muted" style="margin-top:10px">${q.explain || ''}</div>
           </div>`;

@@ -25,7 +25,7 @@ rồi mở http://localhost:5177
 | **Flashcard** | 5 bộ thẻ (kanji · từ vựng · ngữ pháp · kana · lượng từ), **lọc theo chương**, chỉ thẻ chưa học / đang học / đến hạn / 80 kanji cốt lõi / chỉ động từ |
 | **Luyện tập** | 26 dạng câu hỏi: nghĩa kanji, âm Hán Việt, cách đọc, chính tả (表記), nghĩa từ, trợ từ, mẫu ngữ pháp, **chia động từ**, kana, lượng từ, số đếm. Có chế độ gõ chữ (nhận cả kana lẫn romaji) |
 | **Bảng chữ cái** | Hiragana + katakana đầy đủ (gojuon/dakuon/youon/gairaigo), ẩn romaji để tự kiểm tra, luyện gõ, và **đề thi thử kana** (20/40/60/80 câu, chọn phạm vi 1 hoặc cả 2 bảng, có bấm giờ) |
-| **Ngữ pháp** | 127 mẫu theo 14 chương, kèm giải thích và câu ví dụ lấy từ sách, phát âm, kiểm tra theo chương |
+| **Ngữ pháp** | 127 mẫu theo 14 chương, kèm giải thích và câu ví dụ lấy từ sách (**có furigana trên chữ Hán** như trong giáo trình), phát âm, kiểm tra theo chương |
 | **Tra cứu** | Tìm theo kanji/kana/romaji/nghĩa tiếng Việt — gõ **không dấu** cũng ra (`nuoc` → nước), katakana/hiragana như nhau; an toàn với bộ gõ Telex và bàn phím kana trên iOS; phím `/` mở tìm kiếm nhanh |
 | **Thi thử** | **Đề kiểm tra chương** (25 câu trộn từ vựng – kanji – ngữ pháp của đúng chương đó, chấm theo %). **Đề bảng chữ cái** (trộn nhận mặt chữ · viết theo romaji · chữ dễ nhầm · quy tắc trường âm/っ/âm ghép · từ katakana, chấm theo %, mốc đạt 90%). Đề đầy đủ 3 phần (文字・語彙 25′ · 文法・読解 50′ · 聴解 30′), tính giờ từng phần, chấm theo nhóm A (120đ, liệt 38) và B (60đ, liệt 19), tổng đỗ ≥ 80. Có đề lẻ từng phần và mini test 15′ |
 | **Thống kê** | Biểu đồ hoạt động 14 ngày, phân bố trình độ thẻ, độ chính xác theo bộ, lịch sử điểm thi thử, 15 mục hay sai nhất |
@@ -63,6 +63,8 @@ js/app.js              router hash, phím tắt, khung app
 ## Nguồn dữ liệu
 
 Từ vựng, chữ Hán và ngữ pháp được trích tự động từ 14 file PDF của bộ **GUNGUN JOUTATSU! Tiếng Nhật sơ cấp N5 (bản VIP 260829)** — đọc theo toạ độ từng ô trong bảng của sách nên giữ đúng thứ tự chương, phần A/B/C/D và số trang.
+
+**Furigana**: cách đọc nhỏ phía trên chữ Hán được bóc theo toạ độ rồi gán lại đúng chữ (gộp các mảnh rời của từ ghép, ví dụ 昨日《きのう》), hiển thị bằng thẻ `<ruby>` nên đọc được trên mọi trình duyệt. Phần đọc to (TTS) tự bỏ furigana.
 
 Những phần được bổ sung ngoài sách, đã ghi rõ để bạn biết:
 - **Nghĩa tiếng Việt của chữ Hán**: sách chỉ cho âm Hán Việt + từ ví dụ. 95 chữ lấy nghĩa từ bộ dữ liệu N5 tổng hợp, 66 chữ còn lại do mình bổ sung.

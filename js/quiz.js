@@ -240,9 +240,9 @@ const GEN = {
         kind: 'grammar_meaning', id: g.id, label: 'Mẫu ngữ pháp này nghĩa là gì?',
         prompt: g.pattern, promptCls: 'sentence',
         options: o.list, answer: o.idx,
-        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi)}<br>
+        explain: `<b>${N.jpHTML(g.pattern)}</b> — ${esc(g.meaning_vi)}<br>
           <span class="tiny dim">Chương ${g.ch}${g.part ? ' · phần ' + esc(g.part) : ''}</span>
-          ${(g.examples || [])[0] ? `<br><span class="jp">${esc(g.examples[0])}</span>` : ''}`
+          ${(g.examples || [])[0] ? `<br><span class="jp">${N.jpHTML(g.examples[0])}</span>` : ''}`
       });
     }
   },
@@ -259,7 +259,7 @@ const GEN = {
         kind: 'grammar_usage', id: g.id, label: 'Câu này dùng mẫu ngữ pháp nào?',
         prompt: ex, promptCls: 'sentence', speak: ex, sub: g.meaning_vi || '',
         options: o.list, answer: o.idx, optJp: true,
-        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi || '')}<br>
+        explain: `<b>${N.jpHTML(g.pattern)}</b> — ${esc(g.meaning_vi || '')}<br>
           <span class="tiny dim">Chương ${g.ch}${g.part ? ' · phần ' + esc(g.part) : ''}</span>`
       });
     }
@@ -276,7 +276,7 @@ const GEN = {
         kind: 'grammar_explain', id: g.id, label: 'Giải thích này nói về mẫu nào?',
         prompt: g.explain[0].slice(0, 160), promptCls: 'text',
         options: o.list, answer: o.idx, optJp: true,
-        explain: `<b>${esc(g.pattern)}</b> — ${esc(g.meaning_vi || '')}`
+        explain: `<b>${N.jpHTML(g.pattern)}</b> — ${esc(g.meaning_vi || '')}`
       });
     }
   },
@@ -287,24 +287,36 @@ const GEN = {
     src: () => {
       const out = [];
       DATA.grammar.forEach(g => (g.examples || []).forEach(ex => {
+        /* bỏ qua vị trí nằm trong phần furigana 《...》 */
+        const guard = [];
+        ex.replace(/《[^》]*》/g, (m, i) => { guard.push([i, i + m.length]); return m; });
+        const inRuby = i => guard.some(r => i >= r[0] && i < r[1]);
         PARTICLES.forEach(p => {
-          const at = ex.indexOf(p, 1);
-          if (at > 0 && at < ex.length - 1 && !'。、'.includes(ex[at - 1])) out.push({ g, ex, p, at });
+          for (let at = ex.indexOf(p, 1); at > 0; at = ex.indexOf(p, at + 1)) {
+            if (inRuby(at)) continue;
+            const before = ex[at - 1], after = ex[at + p.length] || '';
+            /* trợ từ dính sau một từ và trước dấu cách — tránh khoét nhầm vào です・ました */
+            if (' 　。、《》'.includes(before)) continue;
+            if (p === 'の' && 'こそあど'.includes(before)) continue;   /* この・その・あの・どの */
+            if (!' 　'.includes(after)) continue;
+            out.push({ g, ex, p, at });
+            break;
+          }
         });
       }));
       return out;
     },
     make(it) {
       const { g, ex, p, at } = it;
-      const masked = esc(ex.slice(0, at)) + '<span class="q-blank">＿</span>' + esc(ex.slice(at + p.length));
+      const masked = N.jpHTML(ex.slice(0, at)) + '<span class="q-blank">＿</span>' + N.jpHTML(ex.slice(at + p.length));
       const o = opts(p, () => pick(PARTICLES));
       if (!o) return null;
       return Q({
         kind: 'particle', id: g.id, label: 'Điền trợ từ thích hợp',
         promptHTML: masked, promptCls: 'sentence', sub: g.meaning_vi || '', speak: ex,
         options: o.list, answer: o.idx, optJp: true,
-        explain: `Trợ từ <b>${esc(p)}</b><br><span class="jp">${esc(ex)}</span><br>
-          <span class="tiny dim">Mẫu: ${esc(g.pattern)} — chương ${g.ch}</span>`
+        explain: `Trợ từ <b>${esc(p)}</b><br><span class="jp">${N.jpHTML(ex)}</span><br>
+          <span class="tiny dim">Mẫu: ${N.jpHTML(g.pattern)} — chương ${g.ch}</span>`
       });
     }
   },
@@ -599,14 +611,14 @@ function renderQuiz(root, questions, opt) {
     bar.style.width = pct(i, questions.length) + '%';
     root.querySelector('#qCount').textContent = (i + 1) + '/' + questions.length;
 
-    const promptHTML = q.promptHTML || esc(q.prompt);
+    const promptHTML = q.promptHTML || N.jpHTML(q.prompt);
     const body = q.type === 'input'
       ? `<div class="type-answer">
            <input type="text" id="qInput" placeholder="Nhập câu trả lời…" autocomplete="off" autocapitalize="off" spellcheck="false">
            <button class="btn primary" id="qCheck">Kiểm tra</button>
          </div>`
       : `<div class="opts" id="qOpts">${q.options.map((t, n) => `
-            <button class="opt" data-i="${n}"><kbd>${n + 1}</kbd><span class="${q.optJp ? 'jp' : ''}">${esc(t)}</span></button>`).join('')}</div>`;
+            <button class="opt" data-i="${n}"><kbd>${n + 1}</kbd><span class="${q.optJp ? 'jp' : ''}">${q.optJp ? N.jpHTML(t) : esc(t)}</span></button>`).join('')}</div>`;
 
     host.innerHTML = `
       <div class="q-card">
